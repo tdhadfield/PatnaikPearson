@@ -1599,9 +1599,12 @@ def estimate_product_alpha_base(alpha_1 : float,
   
 def calculate_nu_over_d_given_alpha_and_d(alpha : float, d : int) -> float:
     
-    print("** calculate_nu_over_d_given_alpha_and_d : need to implement this by inverting calculate_nu_over_d_given_alpha_and_d !! **") 
+    _, nu_over_d = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha, d)
+    return nu_over_d
     
-    return calculate_nu_over_d_given_alpha(alpha)
+    #print("** calculate_nu_over_d_given_alpha_and_d : need to implement this by inverting calculate_nu_over_d_given_alpha_and_d !! **") 
+    
+    #return calculate_nu_over_d_given_alpha(alpha)
   
 def calculate_nu_over_d_given_alpha(alpha : float) -> float:
     
@@ -2443,6 +2446,64 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
 
   # initial estimates
   alpha_0 = 2 + (1.0 - nu_over_d)**0.5
+  #_, nu_over_d_0 = calculate_nu_alpha_d_analytic(alpha_0, d)
+  _, nu_over_d_0 = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_0, d)
+
+  alpha_i = alpha_0
+  nu_over_d_i = nu_over_d_0
+  alpha_i_plus_one = alpha_i
+  nu_over_d_i_plus_one = nu_over_d_i
+
+  stepwise_scale_factor = 0.99
+  delta_alpha = 0.1
+  min_alpha_i = 1.01
+  for i in range(0,100):
+    if abs(nu_over_d_i - nu_over_d) < eps:
+      return alpha_i
+    # newton-raphson method
+    #new_nu, new_nu_over_d = calculate_nu_alpha_d_analytic(alpha_i, d)
+    new_nu, new_nu_over_d = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i, d)
+    g_i = new_nu_over_d - nu_over_d
+    #_, new_nu_over_d_plus = calculate_nu_alpha_d_analytic(alpha_i + delta_alpha, d)
+    _, new_nu_over_d_plus = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i + delta_alpha, d)
+    #_, new_nu_over_d_minus = calculate_nu_alpha_d_analytic(alpha_i - delta_alpha, d)
+    _, new_nu_over_d_minus = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i - delta_alpha, d)
+    g_prime_i = (new_nu_over_d_plus - new_nu_over_d_minus) / (2.0 * delta_alpha)
+
+    if abs(g_prime_i) < eps:
+      delta_alpha *=2
+      alpha_i_plus_one = alpha_i
+    else:
+      alpha_i_plus_one = alpha_i - (g_i / g_prime_i)
+
+    if alpha_i_plus_one < min_alpha_i:
+      alpha_i_plus_one = 0.5 * (min_alpha_i + alpha_i)
+
+    #_, nu_over_d_i_plus_one = calculate_nu_alpha_d_analytic(alpha_i_plus_one,d)
+    _, nu_over_d_i_plus_one = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i_plus_one,d)
+
+    alpha_i = alpha_i_plus_one
+    nu_over_d_i = nu_over_d_i_plus_one
+    delta_alpha = delta_alpha * stepwise_scale_factor
+
+    if verbose:
+      print(i, delta_alpha, alpha_i, nu_over_d_i)
+
+  return alpha_i
+
+  
+def calculate_alpha_given_nu_over_d_and_d_old(nu_over_d : float,
+                                          d : int,
+                                          verbose : bool = False
+                                          ) -> float:
+                                               
+  # old and spare - 02/05/2026 : I compared old and new versions, get identical results
+  # given nu / d and d, find alpha
+
+  eps = 1e-9
+
+  # initial estimates
+  alpha_0 = 2 + (1.0 - nu_over_d)**0.5
   _, nu_over_d_0 = calculate_nu_alpha_d_analytic(alpha_0, d)
 
   alpha_i = alpha_0
@@ -2483,14 +2544,31 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
 
   return alpha_i
   
-def calculate_nu_alpha_d_analytic_array(alpha_vals : np.ndarray, d : int) -> tuple:
+def calculate_nu_and_nu_over_d_given_alpha_d_analytic_array(alpha_vals : np.ndarray, d : int) -> tuple:
+
+  return calculate_nu_alpha_d_analytic_array(alpha_vals, d, warning=False)
+  
+def calculate_nu_alpha_d_analytic_array(alpha_vals : np.ndarray, d : int, warning=True) -> tuple:
+    
+  if warning:
+    print("** warning: call calculate_nu_and_nu_over_d_given_alpha_d_analytic_array rather than calculate_nu_alpha_d_analytic_array **")
+    
   nu_over_d_vals = []
   for alpha in alpha_vals:
     nu, nu_over_d = calculate_nu_alpha_d_analytic(alpha, d)
     nu_over_d_vals.append(nu_over_d)
   return np.array(nu_over_d_vals)
+  
+def calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha : float, d : int) -> tuple:
 
-def calculate_nu_alpha_d_analytic(alpha : float, d : int) -> tuple:
+  return calculate_nu_alpha_d_analytic(alpha, d, warning=False)
+
+def calculate_nu_alpha_d_analytic(alpha : float, d : int, warning=True) -> tuple:
+
+  if warning:
+    print("** warning: call calculate_nu_and_nu_over_d_given_alpha_d_analytic rather than calculate_nu_alpha_d_analytic **")
+
+  eps = 1e-6
   eps = 1e-6
 
   default_nu = 0.0
