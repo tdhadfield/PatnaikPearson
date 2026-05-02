@@ -67,8 +67,9 @@ from .helper import generate_N_points_in_unit_k_ball_in_R_d
 from .helper import generate_N_points_on_surface_of_k_ellipsoid_in_R_d
 from .helper import generate_N_points_in_solid_k_cube_in_R_d
 from .helper import generate_N_points_on_k_dim_cubical_surface_in_R_d
-
-
-
-
-
+from .helper import calculate_alpha_given_nu_over_d_and_d
+from .helper import calculate_nu_alpha_d_analytic_array
+from .helper import calculate_nu_alpha_d_analytic
+from .helper import get_nu_over_d_vals_from_alpha_vals_d
+from .helper import calculate_conjectured_limiting_value_nu_over_d
+from .helper import C_alpha
