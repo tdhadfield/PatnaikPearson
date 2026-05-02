@@ -114,13 +114,10 @@ def generate_embedding_weights_summary_stats(these_embeddings, rescale_factor = 
   this_mid = 0.5 * (this_min + this_max)
   min_value = this_mid + 1.25 * rescale_factor * (this_min - this_mid)
   max_value = this_mid + 1.25 * rescale_factor * (this_max - this_mid)
-  #min_value = 1.1 * np.min(these_embeddings) * rescale_factor
-  #max_value = 1.1 * np.max(these_embeddings) * rescale_factor
   num_bins = 100
   step_size = (max_value - min_value) / num_bins
   for i in range(num_bins + 1):
     custom_bins.append(min_value + i * step_size)
-  #print(custom_bins)
 
   flattened_array = these_embeddings.flatten()
   print("flattened_array.shape = ",flattened_array.shape)
@@ -160,13 +157,10 @@ def generate_embedding_norm_summary_stats(these_embeddings, rescale_factor = 1.0
   this_mid = 0.5 * (this_min + this_max)
   min_value = this_mid + 1.25 * rescale_factor * (this_min - this_mid)
   max_value = this_mid + 1.25 * rescale_factor * (this_max - this_mid)
-  #min_value = 1.1 * np.min(these_norms) * rescale_factor
-  #max_value = 1.1 * np.max(these_norms) * rescale_factor
   num_bins = 100
   step_size = (max_value - min_value) / num_bins
   for i in range(num_bins + 1):
     custom_bins.append(min_value + i * step_size)
-  #print(custom_bins)
 
   flattened_array = these_norms.flatten()
   print("flattened_array.shape = ",flattened_array.shape)
@@ -197,13 +191,11 @@ def generate_norm_similarities(these_embeddings, num_random_indices=100, eps=0.0
   if num_random_indices > num_embeddings:
     num_random_indices = num_embeddings
   random_indices = np.random.choice(num_embeddings, num_random_indices, replace=False)
-  #print("random_indices :", random_indices)
 
   random_embeddings = these_embeddings[random_indices]
   print("random_embeddings.shape = ",random_embeddings.shape)
   X = random_embeddings
   these_norms = np.linalg.norm(random_embeddings, axis=1)
-  #eps = 0.000001
   this_eps = np.ones(len(these_norms)) * eps
   these_norms = these_norms + this_eps
   one_over_norms = 1.0 / these_norms
@@ -232,7 +224,6 @@ def generate_norm_similarities(these_embeddings, num_random_indices=100, eps=0.0
   step_size = (max_value - min_value) / num_bins
   for i in range(num_bins + 1):
     custom_bins.append(min_value + i * step_size)
-  #print(custom_bins)
 
   flattened_array = A.flatten()
   print("flattened_array.shape = ",flattened_array.shape)
@@ -275,7 +266,6 @@ def normalise_vectors(all_vectors, demean=True, verbose=False):
     final_x = this_x * (1.0 / this_norm)
 
     final_mean = np.mean(final_x)
-    #print(i, final_mean)
     final_norm_sq = np.dot(final_x, final_x)
 
     final_vectors[i,:] = final_x
@@ -973,7 +963,7 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
   W = generate_square_weight_matrix(d, alpha)
   dim_W = W.shape[1]
   actual_nu_W_over_dim_W = calculate_PatnaikPearson_dim(W) / dim_W
-  actual_alpha_W = calculate_alpha_given_nu_over_d(actual_nu_W_over_dim_W)
+  actual_alpha_W = calculate_alpha_given_nu_over_d_and_d(actual_nu_W_over_dim_W, dim_W)
   if verbose:
     print("alpha = ", alpha, ", actual_alpha_W = ", actual_alpha_W, ", actual_nu_W_over_dim_W = ", actual_nu_W_over_dim_W)
 
@@ -981,7 +971,7 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
   dim_WTW = WTW.shape[1]
   actual_nu_WTW_over_dim_WTW = calculate_PatnaikPearson_dim(WTW) / dim_WTW
   estimate_nu_WTW_over_dim_WTW = estimate_product_nu_over_d(actual_nu_W_over_dim_W, actual_nu_W_over_dim_W)
-  actual_alpha_WTW = calculate_alpha_given_nu_over_d(actual_nu_WTW_over_dim_WTW) 
+  actual_alpha_WTW = calculate_alpha_given_nu_over_d_and_d(actual_nu_WTW_over_dim_WTW, dim_WTW) 
   estimate_alpha_WTW = estimate_product_alpha(actual_alpha_W, actual_alpha_W)
   if verbose:
     print("dim_WTW = ", dim_WTW)
@@ -1006,7 +996,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   X = generate_data_manifold(N, d, alpha)
   dim_X = X.shape[1]
   actual_nu_X_over_dim_X = calculate_PatnaikPearson_dim(X) / dim_X
-  actual_alpha_X = calculate_alpha_given_nu_over_d(actual_nu_X_over_dim_X)
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(actual_nu_X_over_dim_X, dim_X)
   if verbose:
     print("alpha = ", alpha, ", actual_alpha_X = ", actual_alpha_X, ", actual_nu_X_over_dim_X = ", actual_nu_X_over_dim_X)
 
@@ -1014,7 +1004,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   dim_XTX = XTX.shape[1]
   actual_nu_XTX_over_dim_XTX = calculate_PatnaikPearson_dim(XTX) / dim_XTX
   estimate_nu_XTX_over_dim_XTX = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
-  actual_alpha_XTX = calculate_alpha_given_nu_over_d(actual_nu_XTX_over_dim_XTX) 
+  actual_alpha_XTX = calculate_alpha_given_nu_over_d_and_d(actual_nu_XTX_over_dim_XTX, dim_XTX) 
   estimate_alpha_XTX = estimate_product_alpha(actual_alpha_X, actual_alpha_X)
   if verbose:
     print("dim_XTX = ", dim_XTX)
@@ -1025,7 +1015,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   dim_XXT = XXT.shape[1]
   actual_nu_XXT_over_dim_XXT = calculate_PatnaikPearson_dim(XXT) / dim_XXT
   estimate_nu_XXT_over_dim_XXT = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
-  actual_alpha_XXT = calculate_alpha_given_nu_over_d(actual_nu_XXT_over_dim_XXT) 
+  actual_alpha_XXT = calculate_alpha_given_nu_over_d_and_d(actual_nu_XXT_over_dim_XXT, dim_XXT) 
   estimate_alpha_XXT = estimate_product_alpha(actual_alpha_X, actual_alpha_X)
   if verbose:
     print("dim_XXT = ", dim_XXT)
@@ -1044,7 +1034,7 @@ def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = F
   X = generate_data_manifold(N, d, alpha)
   dim_X = X.shape[1]
   actual_nu_X_over_dim_X = calculate_PatnaikPearson_dim(X) / dim_X
-  actual_alpha_X = calculate_alpha_given_nu_over_d(actual_nu_X_over_dim_X)
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(actual_nu_X_over_dim_X, dim_X)
   if verbose:
     print("alpha = ", alpha, ", actual_alpha_X = ", actual_alpha_X)
     print("actual_nu_X_over_dim_X = ", actual_nu_X_over_dim_X)
@@ -1056,7 +1046,7 @@ def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = F
     print(reluX[0:k,0:k])
   dim_reluX = reluX.shape[1]
   actual_nu_reluX_over_dim_reluX = calculate_PatnaikPearson_dim(reluX) / dim_reluX
-  actual_alpha_reluX = calculate_alpha_given_nu_over_d(actual_nu_reluX_over_dim_reluX)
+  actual_alpha_reluX = calculate_alpha_given_nu_over_d_and_d(actual_nu_reluX_over_dim_reluX, dim_reluX)
   if verbose:
     print("actual_alpha_reluX = ", actual_alpha_reluX)
     print("actual_nu_reluX_over_dim_reluX = ", actual_nu_reluX_over_dim_reluX)
@@ -1069,7 +1059,7 @@ def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = F
     print(geluX[0:k,0:k])
   dim_geluX = geluX.shape[1]
   actual_nu_geluX_over_dim_geluX = calculate_PatnaikPearson_dim(geluX) / dim_geluX
-  actual_alpha_geluX = calculate_alpha_given_nu_over_d(actual_nu_geluX_over_dim_geluX)
+  actual_alpha_geluX = calculate_alpha_given_nu_over_d_and_d(actual_nu_geluX_over_dim_geluX, dim_geluX)
   if verbose:
     print("actual_alpha_geluX = ", actual_alpha_geluX)
     print("actual_nu_geluX_over_dim_geluX = ", actual_nu_geluX_over_dim_geluX)
@@ -1081,7 +1071,7 @@ def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = F
     print(tanhX[0:k,0:k])
   dim_tanhX = tanhX.shape[1]
   actual_nu_tanhX_over_dim_tanhX = calculate_PatnaikPearson_dim(tanhX) / dim_tanhX
-  actual_alpha_tanhX = calculate_alpha_given_nu_over_d(actual_nu_tanhX_over_dim_tanhX)
+  actual_alpha_tanhX = calculate_alpha_given_nu_over_d_and_d(actual_nu_tanhX_over_dim_tanhX, dim_tanhX)
   if verbose:
     print("actual_alpha_tanhX = ", actual_alpha_tanhX)
     print("actual_nu_tanhX_over_dim_tanhX = ", actual_nu_tanhX_over_dim_tanhX)
@@ -1315,7 +1305,7 @@ def calculate_PatnaikPearson_dim(
 
   # Reconstruct the original matrix
   Sigma = np.zeros((this_N, this_d))
-  for i in range(this_d):
+  for i in range(min(this_N,this_d)):
     Sigma[i, i] = S[i]
   Xdemeaned_reconstructed = U @ Sigma @ Vh
 
@@ -1459,7 +1449,6 @@ def plot_histogram_of_eigenvalues(input_data : np.ndarray,
   this_mid = 0.5 * (this_min + this_max)
   min_value = this_mid + 1.25 * rescale_factor * (this_min - this_mid)
   max_value = this_mid + 1.25 * rescale_factor * (this_max - this_mid)
-  #num_bins = 100
   step_size = (max_value - min_value) / num_bins
   for i in range(num_bins + 1):
     custom_bins.append(min_value + i * step_size)
@@ -1540,24 +1529,21 @@ def plot_histogram_of_values( input_data : np.ndarray,
   return
   
 def estimate_product_nu_over_d(nu_over_d_1 : float,
-                               nu_over_d_2 : float
+                               d_1 : int,
+                               nu_over_d_2 : float,
+                               d_2 : int
                                ) -> float:
                                
   # calculate alpha_1 corresponding to nu_over_d_1, and alpha_2 corresponding to nu_over_d_2
   # calculate the corresponding product_alpha
   # calculate the corresponding nu_over_d
 
-  return estimate_product_nu_over_d_base(nu_over_d_1, nu_over_d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
-
-  #alpha_1 = calculate_alpha_given_nu_over_d(nu_over_d_1)
-  #alpha_2 = calculate_alpha_given_nu_over_d(nu_over_d_2)
-  #product_alpha = estimate_product_alpha(alpha_1, alpha_2)
-  #product_nu_over_d = calculate_nu_over_d_given_alpha(product_alpha)
-
-  #return product_nu_over_d
+  return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
 
 def estimate_product_nu_over_d_base(nu_over_d_1 : float,
+                                    d_1 : int,
                                     nu_over_d_2 : float,
+                                    d_2 : int,
                                     lower_interpolation_threshold : float,
                                     upper_interpolation_threshold : float
                                     ) -> float:
@@ -1565,29 +1551,25 @@ def estimate_product_nu_over_d_base(nu_over_d_1 : float,
   # calculate the corresponding product_alpha
   # calculate the corresponding nu_over_d
 
-  alpha_1 = calculate_alpha_given_nu_over_d(nu_over_d_1)
-  alpha_2 = calculate_alpha_given_nu_over_d(nu_over_d_2)
+  alpha_1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_1, d_1)
+  alpha_2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_2, d_2)
   product_alpha = estimate_product_alpha_base(alpha_1, alpha_2, lower_interpolation_threshold, upper_interpolation_threshold)
   product_nu_over_d = calculate_nu_over_d_given_alpha(product_alpha)
 
   return product_nu_over_d
 
 def estimate_product_alpha(alpha_1 : float,
-                           alpha_2 : float
+                           d_1 : int,
+                           alpha_2 : float,
+                           d_2 : int
                            ) -> float:
 
-  return estimate_product_alpha_base(alpha_1, alpha_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
-
-#def estimate_product_alpha_v2(alpha_1 : float,
-#                           alpha_2 : float
-#                           ) -> float:
-#
-#  return estimate_product_alpha_base(alpha_1, alpha_2, lower_interpolation_threshold=1.8, upper_interpolation_threshold=3.0)
-
-
+  return estimate_product_alpha_base(alpha_1, d_1, alpha_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
 
 def estimate_product_alpha_base(alpha_1 : float,
+                                d_1 : int,
                                 alpha_2 : float,
+                                d_2 : int,
                                 lower_interpolation_threshold : float = 1.5,
                                 upper_interpolation_threshold : float = 2.6
                            ) -> float:
@@ -1595,15 +1577,16 @@ def estimate_product_alpha_base(alpha_1 : float,
   # if min(alpha_1, alpha_2) < lower, then product_alpha is min(alpha_1, alpha_2)
   # if min(alpha_1, alpha_2) > upper, then, calculate the corresponding nu_over_d 's, take the product of these, find the corresponding alpha
   # for lower < min(alpha_1, alpha_2) < upper, then it's a limear interpolation between the two
+  # we also expect to have d_1 == d_2, since this is for multiplying two square matrices together
 
   min_alpha = min(alpha_1, alpha_2)
   if min_alpha < lower_interpolation_threshold:
     return min_alpha
 
-  nu_over_d_1 = calculate_nu_over_d_given_alpha(alpha_1)
-  nu_over_d_2 = calculate_nu_over_d_given_alpha(alpha_2)
+  nu_over_d_1 = calculate_nu_over_d_given_alpha_and_d(alpha_1, d_1)
+  nu_over_d_2 = calculate_nu_over_d_given_alpha_and_d(alpha_2, d_2)
   product_nu_over_d = nu_over_d_1 * nu_over_d_2
-  product_alpha = calculate_alpha_given_nu_over_d(product_nu_over_d)
+  product_alpha = calculate_alpha_given_nu_over_d_and_d(product_nu_over_d, min(d_1,d_2))
 
   if min_alpha > upper_interpolation_threshold:
     return product_alpha
@@ -1614,7 +1597,15 @@ def estimate_product_alpha_base(alpha_1 : float,
 
   return result
   
+def calculate_nu_over_d_given_alpha_and_d(alpha : float, d : int) -> float:
+    
+    print("** calculate_nu_over_d_given_alpha_and_d : need to implement this by inverting calculate_nu_over_d_given_alpha_and_d !! **") 
+    
+    return calculate_nu_over_d_given_alpha(alpha)
+  
 def calculate_nu_over_d_given_alpha(alpha : float) -> float:
+    
+  print("** need to deprecate calculate_nu_over_d_given_alpha : replace with calculate_nu_over_d_given_alpha_and_d !! **")
 
   alpha_vals, nu_over_d_vals = get_alpha_vals_nu_over_d_vals()
 
@@ -1628,6 +1619,8 @@ def calculate_nu_over_d_given_alpha(alpha : float) -> float:
   return nu_over_d_vals[-1]
   
 def calculate_alpha_given_nu_over_d(nu_over_d : float) -> float:
+    
+  print("** deprecate use of calculate_alpha_given_nu_over_d : use calculate_alpha_given_nu_over_d_and_d instead! **")
 
   alpha_vals, nu_over_d_vals = get_alpha_vals_nu_over_d_vals()
 
@@ -1641,6 +1634,8 @@ def calculate_alpha_given_nu_over_d(nu_over_d : float) -> float:
   return alpha_vals[-1]
   
 def get_alpha_vals_nu_over_d_vals() -> tuple[np.ndarray, np.ndarray]:
+    
+  print("** deprecate use of get_alpha_vals_nu_over_d_vals !! **")
 
   smoothed_alpha_vals =  [1.109719, 1.113363, 1.117818, 1.123082, 1.129075, 1.135717, 1.142925, 1.150619, 1.158718, 1.167141, 1.175807, 1.184635, 1.193544, 1.202452, 1.211361, 1.22027, 1.229179, 1.238088, 1.246997, 1.255906, 1.264815, 1.273724, 1.282633, 1.291542, 1.30045 , 1.309359, 1.318268, 1.327177, 1.336086, 1.344995, 1.353904, 1.362813, 1.371722, 1.380631, 1.38954 , 1.398448, 1.407357, 1.416266, 1.425175, 1.434084, 1.442993, 1.451902, 1.460811, 1.46972 , 1.478629, 1.487538, 1.496446, 1.505355, 1.514264, 1.523173, 1.532082, 1.540991, 1.5499  , 1.558809, 1.567718, 1.576627, 1.585536, 1.594444, 1.603353, 1.612262, 1.621171, 1.63008 , 1.638989, 1.647898, 1.656807, 1.665716, 1.674625, 1.683534, 1.692442, 1.701351, 1.71026 , 1.719169, 1.728078, 1.736987, 1.745896, 1.754805, 1.763714, 1.772623, 1.781532, 1.79044, 1.799349, 1.808258, 1.817167, 1.826076, 1.834985, 1.843894, 1.852803, 1.861712, 1.870621, 1.87953 , 1.888438, 1.897347, 1.906256, 1.915165, 1.924074, 1.932983, 1.941892, 1.950801, 1.95971 , 1.968619, 1.977528, 1.986436, 1.995345, 2.004254, 2.013163, 2.022072, 2.030981, 2.03989 , 2.048799, 2.057708, 2.066617, 2.075526, 2.084434, 2.093343, 2.102252, 2.111161, 2.12007 , 2.128979, 2.137888, 2.146797, 2.155706, 2.164615, 2.173524, 2.182432, 2.191341, 2.20025 , 2.209159, 2.218068, 2.226977, 2.235886, 2.244795, 2.253704, 2.262613, 2.271522, 2.28043 , 2.289339, 2.298248, 2.307157, 2.316066, 2.324975, 2.333884, 2.342793, 2.351702, 2.360611, 2.36952 , 2.378428, 2.387337, 2.396246, 2.405155, 2.414064, 2.422973, 2.431882, 2.440791, 2.4497  , 2.458609, 2.467518, 2.476426, 2.485335, 2.494244, 2.503153, 2.512062, 2.520971, 2.52988 , 2.538789, 2.547698, 2.556607, 2.565516, 2.574424, 2.583333, 2.592242, 2.601151, 2.61006 , 2.618969, 2.627878, 2.636787, 2.645696, 2.654605, 2.663514, 2.672422, 2.681331, 2.69024 , 2.699149, 2.708058, 2.716967, 2.725876, 2.734785, 2.743694, 2.752603, 2.761512, 2.77042 , 2.779329, 2.788238, 2.797147, 2.806056, 2.814965, 2.823874, 2.832783, 2.841692, 2.850601, 2.85951, 2.868418, 2.877327, 2.886236, 2.895145, 2.904054, 2.912963, 2.921872, 2.930781, 2.93969 , 2.948599, 2.957508, 2.966416, 2.975325, 2.984234, 2.993143, 3.002052, 3.010961, 3.01987 , 3.028779, 3.037688, 3.046597, 3.055506, 3.064414, 3.073323, 3.082232, 3.091141, 3.10005 , 3.108959, 3.117868, 3.126777, 3.135686, 3.144595, 3.153504, 3.162412, 3.171321, 3.18023 , 3.189139, 3.198048, 3.206957, 3.215866, 3.224775, 3.233684, 3.242593, 3.251502, 3.26041 , 3.269319, 3.278228, 3.287137, 3.296046, 3.304955, 3.313864, 3.322773, 3.331682, 3.340591, 3.349499, 3.358408, 3.367317, 3.376226, 3.385135, 3.394044, 3.402953, 3.411862, 3.420771, 3.42968, 3.438589, 3.447497, 3.456406, 3.465315, 3.474224, 3.483133, 3.492042, 3.500951, 3.50986 , 3.518769, 3.527678, 3.536587, 3.545495, 3.554404, 3.563313, 3.572222, 3.581131, 3.59004 , 3.598949, 3.607858, 3.616767, 3.625676, 3.634585, 3.643493, 3.652402, 3.661311, 3.67022 , 3.679129, 3.688038, 3.696947, 3.705856, 3.714765, 3.723674, 3.732583, 3.741491, 3.7504  , 3.759309, 3.768218, 3.777127, 3.786036, 3.794945, 3.803854, 3.812763, 3.821672, 3.830581, 3.839489, 3.848398, 3.857307, 3.866216, 3.875125, 3.884034, 3.892943, 3.901852, 3.910761, 3.91967 , 3.928579, 3.937487, 3.946396, 3.955305, 3.964214, 3.973123, 3.982032, 3.990941, 3.99985, 4.008759, 4.017668, 4.026577, 4.035485, 4.044394, 4.053303, 4.062212, 4.071121, 4.08003 , 4.088939, 4.097848, 4.106757, 4.115666, 4.124575, 4.133483, 4.142392, 4.151301, 4.16021 , 4.169119, 4.178028, 4.186937, 4.195846, 4.204755, 4.213664, 4.222573, 4.231481, 4.24039 , 4.249299, 4.258208, 4.267117, 4.276026, 4.284935, 4.293844, 4.302753, 4.311662, 4.320571, 4.329479, 4.338388, 4.347297, 4.356206, 4.365115, 4.374024, 4.382933, 4.391842, 4.400751, 4.40966 , 4.418569, 4.427477, 4.436386, 4.445295, 4.454204, 4.463113, 4.472022, 4.480931, 4.48984 , 4.498749, 4.507658, 4.516567, 4.525475, 4.534384, 4.543293, 4.552202, 4.561111, 4.57002, 4.578929, 4.587838, 4.596747, 4.605656, 4.614565, 4.623473, 4.632382, 4.641291, 4.6502  , 4.659109, 4.668018, 4.676927, 4.685836, 4.694745, 4.703654, 4.712563, 4.721471, 4.73038 , 4.739289, 4.748198, 4.757107, 4.766016, 4.774925, 4.783834, 4.792743, 4.801652, 4.810561, 4.819469, 4.828378, 4.837287, 4.846196, 4.855105, 4.864014, 4.872923, 4.881832, 4.890741, 4.89965 , 4.908559, 4.917467, 4.926376, 4.935285, 4.944194, 4.953103, 4.962012, 4.970921, 4.97983 , 4.988739, 4.997648, 5.006557, 5.015465, 5.024374, 5.033283, 5.042192, 5.051101, 5.06001 , 5.068919, 5.077828, 5.086737, 5.095646, 5.104555, 5.113463, 5.122372, 5.131281, 5.14019, 5.149099, 5.158008, 5.166917, 5.175826, 5.184735, 5.193644, 5.202553, 5.211461, 5.22037 , 5.229279, 5.238188, 5.247097, 5.256006, 5.264915, 5.273824, 5.282733, 5.291642, 5.300551, 5.309459, 5.318368, 5.327277, 5.336186, 5.345095, 5.354004, 5.362913, 5.371822, 5.380731, 5.38964 , 5.398549, 5.407457, 5.416366, 5.425275, 5.434184, 5.443093, 5.452002, 5.460911, 5.46982 , 5.478729, 5.487638, 5.496547, 5.505455, 5.514364, 5.523273, 5.532182, 5.541091, 5.55    , 5.558909, 5.567818, 5.576727, 5.585636, 5.594545, 5.603453, 5.612362, 5.621271, 5.63018 , 5.639089, 5.647998, 5.656907, 5.665816, 5.674725, 5.683634, 5.692543, 5.701451, 5.71036, 5.719269, 5.728178, 5.737087, 5.745996, 5.754905, 5.763814, 5.772723, 5.781632, 5.790541, 5.799449, 5.808358, 5.817267, 5.826176, 5.835085, 5.843994, 5.852903, 5.861812, 5.870721, 5.87963 , 5.888539, 5.897447, 5.906356, 5.915265, 5.924174, 5.933083, 5.941992, 5.950901, 5.95981 , 5.968719, 5.977628, 5.986537, 5.995445, 6.004354, 6.013263, 6.022172, 6.031081, 6.03999 , 6.048899, 6.057808, 6.066717, 6.075626, 6.084535, 6.093443, 6.102352, 6.111261, 6.12017 , 6.129079, 6.137988, 6.146897, 6.155806, 6.164715, 6.173624, 6.182533, 6.191441, 6.20035 , 6.209259, 6.218168, 6.227077, 6.235986, 6.244895, 6.253804, 6.262713, 6.271622, 6.280531, 6.289439, 6.298348, 6.307257, 6.316166, 6.325075, 6.333984, 6.342893, 6.351802, 6.360711, 6.36962 , 6.378529, 6.387437, 6.396346, 6.405255, 6.414164, 6.423073, 6.431982, 6.440891, 6.4498  , 6.458709, 6.467618, 6.476527, 6.485435, 6.494344, 6.503253, 6.512162, 6.521071, 6.52998 , 6.538889, 6.547798, 6.556707, 6.565616, 6.574525, 6.583433, 6.592342, 6.601251, 6.61016 , 6.619069, 6.627978, 6.636887, 6.645796, 6.654705, 6.663614, 6.672523, 6.681431, 6.69034 , 6.699249, 6.708158, 6.717067, 6.725976, 6.734885, 6.743794, 6.752703, 6.761612, 6.770521, 6.779429, 6.788338, 6.797247, 6.806156, 6.815065, 6.823974, 6.832883, 6.841792, 6.850701, 6.85961 , 6.868519, 6.877427, 6.886336, 6.895245, 6.904154, 6.913063, 6.921972, 6.930881, 6.93979 , 6.948699, 6.957608, 6.966517, 6.975425, 6.984334, 6.993243, 7.002152, 7.011061, 7.01997 , 7.028879, 7.037788, 7.046697, 7.055606, 7.064515, 7.073423, 7.082332, 7.091241, 7.10015 , 7.109059, 7.117968, 7.126877, 7.135786, 7.144695, 7.153604, 7.162513, 7.171421, 7.18033 , 7.189239, 7.198148, 7.207057, 7.215966, 7.224875, 7.233784, 7.242693, 7.251602, 7.260511, 7.269419, 7.278328, 7.287237, 7.296146, 7.305055, 7.313964, 7.322873, 7.331782, 7.340691, 7.3496, 7.358509, 7.367417, 7.376326, 7.385235, 7.394144, 7.403053, 7.411962, 7.420871, 7.42978 , 7.438689, 7.447598, 7.456507, 7.465415, 7.474324, 7.483233, 7.492142, 7.501051, 7.50996 , 7.518869, 7.527778, 7.536687, 7.545596, 7.554505, 7.563413, 7.572322, 7.581231, 7.59014 , 7.599049, 7.607958, 7.616867, 7.625776, 7.634685, 7.643594, 7.652503, 7.661411, 7.67032 , 7.679229, 7.688138, 7.697047, 7.705956, 7.714865, 7.723774, 7.732683, 7.741592, 7.750501, 7.759409, 7.768318, 7.777227, 7.786136, 7.795045, 7.803954, 7.812863, 7.821772, 7.830681, 7.83959 , 7.848498, 7.857407, 7.866316, 7.875225, 7.884134, 7.893043, 7.901952, 7.910861, 7.91977, 7.928679, 7.937588, 7.946496, 7.955405, 7.964314, 7.973223, 7.982132, 7.991041, 7.99995 , 8.008859, 8.017768, 8.026677, 8.035586, 8.044494, 8.053403, 8.062312, 8.071221, 8.08013 , 8.089039, 8.097948, 8.106857, 8.115766, 8.124675, 8.133584, 8.142492, 8.151401, 8.16031 , 8.169219, 8.178128, 8.187037, 8.195946, 8.204855, 8.213764, 8.222673, 8.231582, 8.24049 , 8.249399, 8.258308, 8.267217, 8.276126, 8.285035, 8.293944, 8.302853, 8.311762, 8.320671, 8.32958 , 8.338488, 8.347397, 8.356306, 8.365215, 8.374124, 8.383033, 8.391942, 8.400851, 8.40976 , 8.418669, 8.427578, 8.436486, 8.445395, 8.454304, 8.463213, 8.472122, 8.481031, 8.48994, 8.498849, 8.507758, 8.516667, 8.525576, 8.534484, 8.543393, 8.552302, 8.561211, 8.57012 , 8.579029, 8.587938, 8.596847, 8.605756, 8.614665, 8.623574, 8.632482, 8.641391, 8.6503  , 8.659209, 8.668118, 8.677027, 8.685936, 8.694845, 8.703754, 8.712663, 8.721572, 8.73048 , 8.739389, 8.748298, 8.757207, 8.766116, 8.775025, 8.783934, 8.792843, 8.801752, 8.810661, 8.81957 , 8.828478, 8.837387, 8.846296, 8.855205, 8.864114, 8.873023, 8.881932, 8.890841, 8.89975 , 8.908659, 8.917568, 8.926476, 8.935385, 8.944294, 8.953203, 8.962112, 8.971021, 8.97993 , 8.988839, 8.997748, 9.006657, 9.015566, 9.024474, 9.033383, 9.042292, 9.051201, 9.06011, 9.069019, 9.077928, 9.086837, 9.095746, 9.104655, 9.113564, 9.122472, 9.131381, 9.14029 , 9.149199, 9.158108, 9.167017, 9.175926, 9.184835, 9.193744, 9.202653, 9.211562, 9.22047 , 9.229379, 9.238288, 9.247197, 9.256106, 9.265015, 9.273924, 9.282833, 9.291742, 9.300651, 9.30956 , 9.318468, 9.327377, 9.336286, 9.345195, 9.354104, 9.363013, 9.371922, 9.380831, 9.38974 , 9.398649, 9.407558, 9.416466, 9.425375, 9.434284, 9.443193, 9.452102, 9.461011, 9.46992 , 9.478829, 9.487738, 9.496647, 9.505556, 9.514464, 9.523373, 9.532282, 9.541191, 9.5501  , 9.559009, 9.567918, 9.576827, 9.585736, 9.594645, 9.603554, 9.612462, 9.621371, 9.63028, 9.639189, 9.648098, 9.657007, 9.665916, 9.674825, 9.683734, 9.692643, 9.701552, 9.71046 , 9.719369, 9.728278, 9.737187, 9.746096, 9.755005, 9.763914, 9.772823, 9.781732, 9.790641, 9.79955 , 9.808458, 9.817367, 9.826276, 9.835185, 9.844094, 9.853003, 9.861912, 9.870821, 9.87973 , 9.888639, 9.897548, 9.906456, 9.915365, 9.924193, 9.932859, 9.941282, 9.949381, 9.957075, 9.964283, 9.970925, 9.976918]
 
@@ -1654,7 +1649,6 @@ def smooth_this_array(input_array : np.ndarray,
                       num_decimal_places : int = 3) -> np.ndarray:
 
   len_input_array = input_array.shape[0]
-  #smoothing_window_length = 20
   smoothing_parameters = np.ones(smoothing_window_length)
   for i in range(smoothing_window_length):
     smoothing_parameters[i] = min(i + 1, smoothing_window_length - i)
@@ -1676,7 +1670,6 @@ def smooth_this_array(input_array : np.ndarray,
   dp_factor = 10**num_decimal_places
   for i in range(len(smoothed_values_final)):
     smoothed_values_final[i] = round(smoothed_values_final[i] * dp_factor) / dp_factor
-  #print(len(smoothed_values_final))
 
   return smoothed_values_final
   
@@ -1743,10 +1736,10 @@ def attention_experiment(N : int,
   nuWK = calculate_PatnaikPearson_dim(WK)
   nuWV = calculate_PatnaikPearson_dim(WV)
 
-  implied_alpha_X = calculate_alpha_given_nu_over_d(nuX / d)
-  implied_alpha_Q = calculate_alpha_given_nu_over_d(nuWQ / d)
-  implied_alpha_K = calculate_alpha_given_nu_over_d(nuWK / d)
-  implied_alpha_V = calculate_alpha_given_nu_over_d(nuWV / d)
+  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nuX / d, d)
+  implied_alpha_Q = calculate_alpha_given_nu_over_d_and_d(nuWQ / d, d)
+  implied_alpha_K = calculate_alpha_given_nu_over_d_and_d(nuWK / d, d)
+  implied_alpha_V = calculate_alpha_given_nu_over_d_and_d(nuWV / d, d)
 
   if verbose:
     print("alpha_X = ", alpha_X, ", nuX = ", nuX, ", implied_alpha_X = ", implied_alpha_X)
@@ -1757,7 +1750,7 @@ def attention_experiment(N : int,
   XWQ = X @ WQ
   actual_nu_XWQ = calculate_PatnaikPearson_dim(XWQ)
   estimate_nu_XWQ = d * estimate_product_nu_over_d(nuX / d, nuWQ / d)
-  actual_alpha_XWQ = calculate_alpha_given_nu_over_d(actual_nu_XWQ / d)
+  actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWQ / d, d)
   estimate_alpha_XWQ = estimate_product_alpha(alpha_X, alpha_Q)
   if verbose:
     print("nuX = ", nuX, ", nuWQ = ", nuWQ, ", actual_nu_XWQ = ", actual_nu_XWQ, ", estimate_nu_XWQ = ", estimate_nu_XWQ)
@@ -1766,7 +1759,7 @@ def attention_experiment(N : int,
   XWK = X @ WK
   actual_nu_XWK = calculate_PatnaikPearson_dim(XWK)
   estimate_nu_XWK = d * estimate_product_nu_over_d(nuX / d, nuWK / d)
-  actual_alpha_XWK = calculate_alpha_given_nu_over_d(actual_nu_XWK / d)
+  actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWK / d, d)
   estimate_alpha_XWK = estimate_product_alpha(alpha_X, alpha_K)
   if verbose:
     print("nuX = ", nuX, ", nuWK = ", nuWK, ", actual_nu_XWK = ", actual_nu_XWK, ", estimate_nu_XWK = ", estimate_nu_XWK)
@@ -1775,7 +1768,7 @@ def attention_experiment(N : int,
   XWV = X @ WV
   actual_nu_XWV = calculate_PatnaikPearson_dim(XWV)
   estimate_nu_XWV = d * estimate_product_nu_over_d(nuX / d, nuWV / d)
-  actual_alpha_XWV = calculate_alpha_given_nu_over_d(actual_nu_XWV / d)
+  actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWV / d, d)
   estimate_alpha_XWV = estimate_product_alpha(alpha_X, alpha_V)
   if verbose:
     print("nuX = ", nuX, ", nuWV = ", nuWV, ", actual_nu_XWV = ", actual_nu_XWV, ", estimate_nu_XWV = ", estimate_nu_XWV)
@@ -1784,7 +1777,7 @@ def attention_experiment(N : int,
   QKT = XWQ @ XWK.T
   actual_nu_QKT = calculate_PatnaikPearson_dim(QKT)
   estimate_nu_QKT = d * estimate_product_nu_over_d(actual_nu_XWQ / d, actual_nu_XWK / d)
-  actual_alpha_QKT = calculate_alpha_given_nu_over_d(actual_nu_QKT / d)
+  actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_nu_QKT / d, d)
   estimate_alpha_QKT = estimate_product_alpha(alpha_Q, alpha_K)
   if verbose: 
     print("nuWQ = ", nuWQ, ", nuWK = ", nuWK, "actual_nu_QKT = ", actual_nu_QKT, ", estimate_nu_QKT = ", estimate_nu_QKT)
@@ -1792,14 +1785,14 @@ def attention_experiment(N : int,
 
   QKTrescaled = QKT / np.sqrt(d)
   actual_nu_QKTrescaled = calculate_PatnaikPearson_dim(QKTrescaled)
-  actual_alpha_QKTrescaled = calculate_alpha_given_nu_over_d(actual_nu_QKTrescaled / d)
+  actual_alpha_QKTrescaled = calculate_alpha_given_nu_over_d_and_d(actual_nu_QKTrescaled / d, d)
   if verbose:
     print("actual_nu_QKT = ", actual_nu_QKT, ", actual_nu_QKTrescaled = ", actual_nu_QKTrescaled)
     print("actual_alpha_QKT = ", actual_alpha_QKT, ",actual_alpha_QKTrescaled = ", actual_alpha_QKTrescaled)
 
   AttnQK = row_wise_softmax(QKTrescaled)
   actual_nu_AttnQK = calculate_PatnaikPearson_dim(AttnQK)
-  actual_alpha_AttnQK = calculate_alpha_given_nu_over_d(actual_nu_AttnQK / d)
+  actual_alpha_AttnQK = calculate_alpha_given_nu_over_d_and_d(actual_nu_AttnQK / d, d)
   estimate_alpha_AttnQK = calculate_softmax_alpha(actual_alpha_QKTrescaled)
   if verbose:
     print("sanity check : N = ", N, ", AttnQK.sum() = ", AttnQK.sum())
@@ -1811,10 +1804,7 @@ def attention_experiment(N : int,
   AttnQKV = AttnQK @ XWV
 
   actual_nu_AttnQKV = (calculate_PatnaikPearson_dim(AttnQKV)).astype(float)
-  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d(actual_nu_AttnQKV / d)
-
-  #if verbose:
-  #  print("actual_nu_AttnQKV = ", actual_nu_AttnQKV, ", actual_alpha_AttnQKV =", actual_alpha_AttnQKV) 
+  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_nu_AttnQKV / d)
 
   estimate_alpha_XWQ = estimate_product_alpha(alpha_X, alpha_Q)
   estimate_alpha_XWK = estimate_product_alpha(alpha_X, alpha_K)
@@ -2417,7 +2407,7 @@ def generate_N_points_on_k_dim_cubical_surface_in_R_d(
     plot_histogram_of_values(X,verbose)
 
   # three.one : generate eccentricities
-  # enforce that the eccentricities 1.0 and eccentricty both appear
+  # enforce that the eccentricities 1.0 and eccentricity both appear
   ecc_scale_matrix = np.zeros((d,d))
   ecc_scale_matrix[0,0] = 1.0
   #these_eccentricies = np.random.uniform(1, eccentricity, k)
@@ -2443,3 +2433,117 @@ def generate_N_points_on_k_dim_cubical_surface_in_R_d(
 
   return X, displacement_vector
   
+def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
+                                          d : int,
+                                          verbose : bool = False
+                                          ) -> float:
+  # given nu / d and d, find alpha
+
+  eps = 1e-9
+
+  # initial estimates
+  alpha_0 = 2 + (1.0 - nu_over_d)**0.5
+  _, nu_over_d_0 = calculate_nu_alpha_d_analytic(alpha_0, d)
+
+  alpha_i = alpha_0
+  nu_over_d_i = nu_over_d_0
+  alpha_i_plus_one = alpha_i
+  nu_over_d_i_plus_one = nu_over_d_i
+
+  stepwise_scale_factor = 0.99
+  delta_alpha = 0.1
+  min_alpha_i = 1.01
+  for i in range(0,100):
+    if abs(nu_over_d_i - nu_over_d) < eps:
+      return alpha_i
+    # newton-raphson method
+    new_nu, new_nu_over_d = calculate_nu_alpha_d_analytic(alpha_i, d)
+    g_i = new_nu_over_d - nu_over_d
+    _, new_nu_over_d_plus = calculate_nu_alpha_d_analytic(alpha_i + delta_alpha, d)
+    _, new_nu_over_d_minus = calculate_nu_alpha_d_analytic(alpha_i - delta_alpha, d)
+    g_prime_i = (new_nu_over_d_plus - new_nu_over_d_minus) / (2.0 * delta_alpha)
+
+    if abs(g_prime_i) < eps:
+      delta_alpha *=2
+      alpha_i_plus_one = alpha_i
+    else:
+      alpha_i_plus_one = alpha_i - (g_i / g_prime_i)
+      
+    if alpha_i_plus_one < min_alpha_i:
+      alpha_i_plus_one = 0.5 * (min_alpha_i + alpha_i)
+
+    _, nu_over_d_i_plus_one = calculate_nu_alpha_d_analytic(alpha_i_plus_one,d)
+    
+    alpha_i = alpha_i_plus_one
+    nu_over_d_i = nu_over_d_i_plus_one
+    delta_alpha = delta_alpha * stepwise_scale_factor
+
+    if verbose:
+      print(i, delta_alpha, alpha_i, nu_over_d_i)
+
+  return alpha_i
+  
+def calculate_nu_alpha_d_analytic_array(alpha_vals : np.ndarray, d : int) -> tuple:
+  nu_over_d_vals = []
+  for alpha in alpha_vals:
+    nu, nu_over_d = calculate_nu_alpha_d_analytic(alpha, d)
+    nu_over_d_vals.append(nu_over_d)
+  return np.array(nu_over_d_vals)
+
+def calculate_nu_alpha_d_analytic(alpha : float, d : int) -> tuple:
+  eps = 1e-6
+
+  default_nu = 0.0
+  default_nu_over_d = 0.0
+
+  s = 1.0 / (alpha - 1.0)
+  #this_C_alpha = C_alpha(alpha)
+
+
+  if alpha < 1.0:
+    return default_nu, default_nu_over_d
+
+  if abs(alpha - 3.0) < eps:
+    # alpha == 3
+    nu_over_d = 4.0 / math.log(d)
+    nu = nu_over_d * d
+    return nu, nu_over_d
+
+  if abs(alpha - 2.0) < eps:
+    nu = (math.log(d))**2
+    nu_over_d = nu / d
+    return nu, nu_over_d
+
+  if alpha > 3.0:
+    nu_over_d = C_alpha(alpha) * ((1.0 - d**(s - 1.0))**2) / (1.0 - d**(2.0*s - 1.0))
+    nu = nu_over_d * d
+    return nu, nu_over_d
+
+  if 3.0 > alpha and alpha > 2.0:
+    nu_over_d = -1.0 * C_alpha(alpha) * (d**(1.0 - 2.0 * s)) * ((1 - d**(s - 1.0))**2) / (1.0 - d**(1.0 - 2.0 * s))
+    nu = nu_over_d * d
+    return nu, nu_over_d
+
+  if 2.0 > alpha:
+    nu = -1.0 * C_alpha(alpha) * ((1.0 - d**(1.0 - s))**2) / (1.0 - d**(1.0 - 2.0*s))
+    nu_over_d = nu / d
+    return nu, nu_over_d
+
+  return default_nu, default_nu_over_d
+  
+def get_nu_over_d_vals_from_alpha_vals_d(alpha_vals : np.ndarray, d : int) -> np.ndarray:
+  nu_over_d_vals = []
+  for alpha in alpha_vals:
+    nu, nu_over_d = calculate_nu_alpha_d_analytic(alpha, d)
+    nu_over_d_vals.append(nu_over_d)
+    return np.array(nu_over_d_vals)
+  
+def calculate_conjectured_limiting_value_nu_over_d(alpha : float) -> float:
+  # conjectured limiting value as d -> infinity
+  if alpha <= 3.0:
+    return 0.0
+  else:
+    return C_alpha(alpha)
+
+def C_alpha(alpha : float) -> float:
+  return ((alpha - 3.0) * (alpha - 1.0)) / (alpha - 2.0)**2
