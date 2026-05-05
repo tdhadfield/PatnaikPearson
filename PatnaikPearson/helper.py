@@ -972,7 +972,7 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
   actual_nu_WTW_over_dim_WTW = calculate_PatnaikPearson_dim(WTW) / dim_WTW
   estimate_nu_WTW_over_dim_WTW = estimate_product_nu_over_d(actual_nu_W_over_dim_W, actual_nu_W_over_dim_W)
   actual_alpha_WTW = calculate_alpha_given_nu_over_d_and_d(actual_nu_WTW_over_dim_WTW, dim_WTW) 
-  estimate_alpha_WTW = estimate_product_alpha(actual_alpha_W, actual_alpha_W)
+  estimate_alpha_WTW = estimate_product_alpha(actual_alpha_W, dim_W, actual_alpha_W, dim_W)
   if verbose:
     print("dim_WTW = ", dim_WTW)
     print("actual_nu_WTW_over_dim_WTW = ", actual_nu_WTW_over_dim_WTW, "estimate_nu_WTW_over_dim_WTW = ", estimate_nu_WTW_over_dim_WTW)
@@ -1005,7 +1005,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   actual_nu_XTX_over_dim_XTX = calculate_PatnaikPearson_dim(XTX) / dim_XTX
   estimate_nu_XTX_over_dim_XTX = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
   actual_alpha_XTX = calculate_alpha_given_nu_over_d_and_d(actual_nu_XTX_over_dim_XTX, dim_XTX) 
-  estimate_alpha_XTX = estimate_product_alpha(actual_alpha_X, actual_alpha_X)
+  estimate_alpha_XTX = estimate_product_alpha(actual_alpha_X, dim_X, actual_alpha_X, dim_X)
   if verbose:
     print("dim_XTX = ", dim_XTX)
     print("actual_nu_XTX_over_dim_XTX = ", actual_nu_XTX_over_dim_XTX, "estimate_nu_XTX_over_dim_XTX = ", estimate_nu_XTX_over_dim_XTX)
@@ -1016,7 +1016,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   actual_nu_XXT_over_dim_XXT = calculate_PatnaikPearson_dim(XXT) / dim_XXT
   estimate_nu_XXT_over_dim_XXT = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
   actual_alpha_XXT = calculate_alpha_given_nu_over_d_and_d(actual_nu_XXT_over_dim_XXT, dim_XXT) 
-  estimate_alpha_XXT = estimate_product_alpha(actual_alpha_X, actual_alpha_X)
+  estimate_alpha_XXT = estimate_product_alpha(actual_alpha_X, dim_X, actual_alpha_X, dim_X)
   if verbose:
     print("dim_XXT = ", dim_XXT)
     print("actual_nu_XXT_over_dim_XXT = ", actual_nu_XXT_over_dim_XXT, "estimate_nu_XXT_over_dim_XXT = ", estimate_nu_XXT_over_dim_XXT)
@@ -1553,8 +1553,11 @@ def estimate_product_nu_over_d_base(nu_over_d_1 : float,
 
   alpha_1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_1, d_1)
   alpha_2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_2, d_2)
-  product_alpha = estimate_product_alpha_base(alpha_1, alpha_2, lower_interpolation_threshold, upper_interpolation_threshold)
-  product_nu_over_d = calculate_nu_over_d_given_alpha(product_alpha)
+  product_alpha = estimate_product_alpha_base(alpha_1, d_1, alpha_2, d_2, lower_interpolation_threshold, upper_interpolation_threshold)
+  if d_1 != d_2:
+      print("** warning : estimate_product_nu_over_d_base implicitly assumes that d_1 = d_2, whereas d_1 = " + str(d_1) + ", d_2 = " + str(d_2))
+      return 0.0
+  product_nu_over_d = calculate_nu_over_d_given_alpha_and_d(product_alpha, d_1)
 
   return product_nu_over_d
 
@@ -1704,6 +1707,8 @@ def calculate_softmax_alpha(alpha : float) -> float:
       return interpolated_value
       
 def get_alpha_vals_softmax_alpha_vals() -> tuple:
+    
+  print("*** get_alpha_vals_softmax_alpha_vals : deprecate these hard-coded values? ***")
 
   alpha_vals =  [1.1, 1.11, 1.12, 1.130, 1.140, 1.150, 1.160, 1.170, 1.180, 1.190, 1.20, 1.210, 1.220, 1.23, 1.240, 1.25, 1.26, 1.27, 1.28, 1.29, 1.3, 1.31, 1.32, 1.33, 1.34, 1.35, 1.36, 1.37, 1.380, 1.390, 1.40, 1.410, 1.420, 1.430, 1.440, 1.450, 1.46, 1.470, 1.48, 1.490, 1.5, 1.510, 1.52, 1.53, 1.54, 1.55, 1.56, 1.57, 1.58, 1.59, 1.6, 1.61, 1.62, 1.630, 1.640, 1.650, 1.660, 1.670, 1.680, 1.69, 1.70, 1.71, 1.720, 1.73, 1.740, 1.75, 1.760, 1.77, 1.780, 1.79, 1.80, 1.81, 1.82, 1.83, 1.84, 1.85, 1.86, 1.87, 1.880, 1.890, 1.90, 1.910, 1.920, 1.930, 1.94, 1.950, 1.96, 1.970, 1.98, 1.990, 2.0, 2.010, 2.02, 2.030, 2.04, 2.050, 2.06, 2.070, 2.08, 2.09]
 
@@ -1752,36 +1757,36 @@ def attention_experiment(N : int,
 
   XWQ = X @ WQ
   actual_nu_XWQ = calculate_PatnaikPearson_dim(XWQ)
-  estimate_nu_XWQ = d * estimate_product_nu_over_d(nuX / d, nuWQ / d)
+  estimate_nu_XWQ = d * estimate_product_nu_over_d(nuX / d, d, nuWQ / d, d)
   actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWQ / d, d)
-  estimate_alpha_XWQ = estimate_product_alpha(alpha_X, alpha_Q)
+  estimate_alpha_XWQ = estimate_product_alpha(alpha_X, d, alpha_Q, d)
   if verbose:
     print("nuX = ", nuX, ", nuWQ = ", nuWQ, ", actual_nu_XWQ = ", actual_nu_XWQ, ", estimate_nu_XWQ = ", estimate_nu_XWQ)
     print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
 
   XWK = X @ WK
   actual_nu_XWK = calculate_PatnaikPearson_dim(XWK)
-  estimate_nu_XWK = d * estimate_product_nu_over_d(nuX / d, nuWK / d)
+  estimate_nu_XWK = d * estimate_product_nu_over_d(nuX / d, d, nuWK / d, d)
   actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWK / d, d)
-  estimate_alpha_XWK = estimate_product_alpha(alpha_X, alpha_K)
+  estimate_alpha_XWK = estimate_product_alpha(alpha_X, d, alpha_K, d)
   if verbose:
     print("nuX = ", nuX, ", nuWK = ", nuWK, ", actual_nu_XWK = ", actual_nu_XWK, ", estimate_nu_XWK = ", estimate_nu_XWK)
     print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
 
   XWV = X @ WV
   actual_nu_XWV = calculate_PatnaikPearson_dim(XWV)
-  estimate_nu_XWV = d * estimate_product_nu_over_d(nuX / d, nuWV / d)
+  estimate_nu_XWV = d * estimate_product_nu_over_d(nuX / d, d, nuWV / d, d)
   actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWV / d, d)
-  estimate_alpha_XWV = estimate_product_alpha(alpha_X, alpha_V)
+  estimate_alpha_XWV = estimate_product_alpha(alpha_X, d, alpha_V, d)
   if verbose:
     print("nuX = ", nuX, ", nuWV = ", nuWV, ", actual_nu_XWV = ", actual_nu_XWV, ", estimate_nu_XWV = ", estimate_nu_XWV)
     print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
 
   QKT = XWQ @ XWK.T
   actual_nu_QKT = calculate_PatnaikPearson_dim(QKT)
-  estimate_nu_QKT = d * estimate_product_nu_over_d(actual_nu_XWQ / d, actual_nu_XWK / d)
+  estimate_nu_QKT = d * estimate_product_nu_over_d(actual_nu_XWQ / d, d, actual_nu_XWK / d, d)
   actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_nu_QKT / d, d)
-  estimate_alpha_QKT = estimate_product_alpha(alpha_Q, alpha_K)
+  estimate_alpha_QKT = estimate_product_alpha(alpha_Q, d, alpha_K, d)
   if verbose: 
     print("nuWQ = ", nuWQ, ", nuWK = ", nuWK, "actual_nu_QKT = ", actual_nu_QKT, ", estimate_nu_QKT = ", estimate_nu_QKT)
     print("alpha_Q = ", alpha_Q, ", alpha_K = ", alpha_K, ", actual_alpha_QKT = ", actual_alpha_QKT, "estimate_alpha_QKT = ", estimate_alpha_QKT)
@@ -1802,20 +1807,20 @@ def attention_experiment(N : int,
     print("actual_nu_AttnQK = ", actual_nu_AttnQK, ", actual_nu_QKT = ", actual_nu_QKT, ", actual_nu_QKTrescaled = ", actual_nu_QKTrescaled)
     print("actual_alpha_AttnQK = ", actual_alpha_AttnQK, ", estimate_alpha_AttnQK = ", estimate_alpha_AttnQK)
 
-  estimate_nu_AttnQK = d * calculate_nu_over_d_given_alpha(estimate_alpha_AttnQK)
+  estimate_nu_AttnQK = d * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQK, d)
 
   AttnQKV = AttnQK @ XWV
 
   actual_nu_AttnQKV = (calculate_PatnaikPearson_dim(AttnQKV)).astype(float)
-  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_nu_AttnQKV / d)
+  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_nu_AttnQKV / d, d)
 
-  estimate_alpha_XWQ = estimate_product_alpha(alpha_X, alpha_Q)
-  estimate_alpha_XWK = estimate_product_alpha(alpha_X, alpha_K)
-  estimate_alpha_QKT = estimate_product_alpha(estimate_alpha_XWQ, estimate_alpha_XWK)
+  estimate_alpha_XWQ = estimate_product_alpha(alpha_X, d, alpha_Q, d)
+  estimate_alpha_XWK = estimate_product_alpha(alpha_X, d, alpha_K, d)
+  estimate_alpha_QKT = estimate_product_alpha(estimate_alpha_XWQ, d, estimate_alpha_XWK, d)
   estimate_alpha_softmax_QKT = calculate_softmax_alpha(estimate_alpha_QKT)
-  estimate_alpha_XWV = estimate_product_alpha(alpha_X, alpha_V)
-  estimate_alpha_AttnQKV = estimate_product_alpha(estimate_alpha_softmax_QKT, estimate_alpha_XWV)
-  estimate_nu_AttnQKV = d * calculate_nu_over_d_given_alpha(estimate_alpha_AttnQKV)
+  estimate_alpha_XWV = estimate_product_alpha(alpha_X, d, alpha_V, d)
+  estimate_alpha_AttnQKV = estimate_product_alpha(estimate_alpha_softmax_QKT, d, estimate_alpha_XWV, d)
+  estimate_nu_AttnQKV = d * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, d)
 
   if verbose:
     print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV, ", estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
