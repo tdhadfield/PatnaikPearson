@@ -127,8 +127,6 @@ def generate_embedding_weights_summary_stats(these_embeddings, rescale_factor = 
 
   print("Histogram counts:", hist)
 
-  #import matplotlib.pyplot as plt
-
   # Plot histogram
   plt.hist(flattened_array, bins=custom_bins, edgecolor='black')
   plt.title("embedding_weights")
@@ -233,8 +231,6 @@ def generate_norm_similarities(these_embeddings, num_random_indices=100, eps=0.0
 
   print("Histogram counts:", hist)
 
-  #import matplotlib.pyplot as plt
-
   # Plot histogram
   plt.hist(flattened_array, bins=custom_bins, edgecolor='black')
   plt.title("norm similarities")
@@ -321,15 +317,12 @@ def residualise(these_vectors, this_residualiser, normalise=False, demean=True, 
         this_residual = this_embedding - this_dot_product * y1
         if normalise:
             this_residual = normalise_single_vector(this_residual, demean, verbose)
-        #this_residual2 = np.zeros((1, this_residual.shape[0]))
-        #this_residual2[0,:]= this_residual
-        #this_residual2 = normalise_vectors(this_residual2, demean, verbose)
         if verbose:
             print("this_embedding.shape = ",this_embedding.shape)
             print("this_dot_product =", this_dot_product)
             print("sanity check1 - this should be 0 : ", np.dot(this_residual, y1))
             print("sanity check2 - this should be 1 : ", np.dot(this_residual2[0,:], this_residual2[0,:]))
-        X2[col,:] = this_residual  #2[0,:]
+        X2[col,:] = this_residual
 
     return X2    
 
@@ -1026,11 +1019,6 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
     
 def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = False) -> tuple:
   
-  #X = generate_data_manifold(N, d, alpha
-
-  #N = 2000
-  #d = 1000
-  #alpha = 3.0
   X = generate_data_manifold(N, d, alpha)
   dim_X = X.shape[1]
   actual_nu_X_over_dim_X = calculate_PatnaikPearson_dim(X) / dim_X
@@ -1500,7 +1488,6 @@ def plot_histogram_of_values( input_data : np.ndarray,
   this_mid = 0.5 * (this_min + this_max)
   min_value = this_mid + 1.25 * rescale_factor * (this_min - this_mid)
   max_value = this_mid + 1.25 * rescale_factor * (this_max - this_mid)
-  #num_bins = 100
   step_size = (max_value - min_value) / num_bins
   for i in range(num_bins + 1):
     custom_bins.append(min_value + i * step_size)
@@ -1604,10 +1591,6 @@ def calculate_nu_over_d_given_alpha_and_d(alpha : float, d : int) -> float:
     
     _, nu_over_d = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha, d)
     return nu_over_d
-    
-    #print("** calculate_nu_over_d_given_alpha_and_d : need to implement this by inverting calculate_nu_over_d_given_alpha_and_d !! **") 
-    
-    #return calculate_nu_over_d_given_alpha(alpha)
   
 def calculate_nu_over_d_given_alpha(alpha : float) -> float:
     
@@ -1706,7 +1689,7 @@ def calculate_softmax_alpha(alpha : float) -> float:
       interpolated_value = (1 - t) * softmax_alpha_vals[i - 1] + t * softmax_alpha_vals[i]
       return interpolated_value
       
-def get_alpha_vals_softmax_alpha_vals() -> tuple:
+def get_alpha_vals_softmax_alpha_vals_old() -> tuple:
     
   print("*** get_alpha_vals_softmax_alpha_vals : deprecate these hard-coded values? ***")
 
@@ -1718,7 +1701,139 @@ def get_alpha_vals_softmax_alpha_vals() -> tuple:
 
   return alpha_vals, smoothed_softmax_alpha_vals
   
-def attention_experiment(N : int, 
+def get_alpha_vals_softmax_alpha_vals() -> tuple:
+    
+  # recalculated, with d = 1000
+
+  alpha_vals =  [1.292893, 1.292893, 1.292893, 1.292894, 1.292897, 1.292911, 1.292955, 1.293055, 1.293245, 1.293557, 1.294038, 1.294684, 1.295543, 1.296625, 1.29794, 1.299504, 1.301304, 1.303359, 1.305674, 1.30818, 1.310943, 1.313959, 1.317188, 1.320625, 1.324296, 1.328177, 1.332258, 1.336529, 1.340988, 1.34566, 1.350474, 1.355493, 1.36074, 1.366138, 1.371566, 1.377244, 1.383176, 1.389214, 1.395392, 1.401758, 1.408105, 1.414957, 1.421658, 1.428517, 1.435682, 1.44288, 1.450256, 1.457864, 1.465347, 1.473098, 1.480941, 1.489303, 1.497161, 1.50557, 1.514234, 1.522268, 1.53083, 1.539429, 1.548303, 1.557392, 1.566224, 1.575139, 1.584542, 1.593386, 1.602557, 1.611905, 1.621286, 1.630603, 1.640193, 1.649601, 1.659092, 1.668721, 1.678427, 1.688029, 1.69767, 1.707359, 1.717062, 1.727011, 1.736628, 1.746348, 1.756148, 1.765976, 1.775763, 1.785947, 1.795428, 1.805268, 1.815131, 1.825009, 1.835023, 1.844704, 1.85459, 1.864619, 1.874391, 1.884239, 1.894139, 1.90406, 1.914272, 1.923841, 1.933891, 1.943743, 1.953564, 1.963465, 1.973343, 1.983339, 1.993174, 2.003159, 2.013044, 2.023106, 2.032828, 2.04332, 2.05269, 2.06262, 2.072651, 2.082727, 2.092496, 2.102354, 2.112365, 2.12214, 2.132094, 2.1424, 2.151961, 2.161999, 2.171999, 2.181854, 2.192106, 2.201747, 2.211629, 2.221516, 2.231549, 2.241479, 2.251745, 2.261446, 2.27138, 2.281283, 2.29184, 2.301444, 2.311139, 2.321141, 2.33107, 2.340925, 2.350903, 2.36081, 2.370808, 2.381072, 2.390697, 2.400742, 2.410749, 2.420992, 2.430669, 2.440715, 2.450659, 2.460663, 2.471043, 2.480436, 2.490421, 2.500754, 2.510341, 2.520477, 2.530428, 2.540407, 2.550483, 2.560484, 2.570312, 2.580127, 2.590095, 2.600188, 2.610322, 2.620473, 2.63057, 2.640249, 2.650178, 2.659955, 2.670189, 2.680027, 2.69045, 2.700059, 2.71023, 2.720053, 2.729786, 2.740007, 2.749726, 2.760061, 2.769698, 2.779888, 2.789871, 2.800134, 2.809785, 2.81996, 2.830041, 2.839753, 2.849761, 2.859562, 2.87007, 2.87968, 2.889508, 2.899799, 2.909613, 2.919539, 2.929829]
+
+  smoothed_softmax_alpha_vals =  [1.292914, 1.292996, 1.293203, 1.293678, 1.294728, 1.296808, 1.300562, 1.306794, 1.316385, 1.329934, 1.347666, 1.369349, 1.394165, 1.420706, 1.447452, 1.473202, 1.496971, 1.518262, 1.537178, 1.554416, 1.570556, 1.586047, 1.601366, 1.616842, 1.632358, 1.647563, 1.662246, 1.676216, 1.689213, 1.700968, 1.711585, 1.721368, 1.730587, 1.739492, 1.74844, 1.757716, 1.767471, 1.777674, 1.788309, 1.799396, 1.810806, 1.822261, 1.833365, 1.843837, 1.853305, 1.861474, 1.868283, 1.874073, 1.879167, 1.883929, 1.888895, 1.894462, 1.900665, 1.907513, 1.915122, 1.923224, 1.931464, 1.939668, 1.947755, 1.955318, 1.962191, 1.968444, 1.974084, 1.978888, 1.982925, 1.986353, 1.989125, 1.991371, 1.993437, 1.995663, 1.998161, 2.001109, 2.004468, 2.007972, 2.011216, 2.014023, 2.01624, 2.017922, 2.01929, 2.020568, 2.021905, 2.023332, 2.024745, 2.025922, 2.026976, 2.028079, 2.029484, 2.031391, 2.034022, 2.037213, 2.040511, 2.043518, 2.045851, 2.047506, 2.0488, 2.050121, 2.051793, 2.054179, 2.057428, 2.06107, 2.064822, 2.068867, 2.073481, 2.078871, 2.085619, 2.094453, 2.10529, 2.117694, 2.130942, 2.144309, 2.156784, 2.167711, 2.176881, 2.184373, 2.190499, 2.195594, 2.200096, 2.204276, 2.208387, 2.212503, 2.216734, 2.221157, 2.225794, 2.230647, 2.23571, 2.240998, 2.246485, 2.252183, 2.258134, 2.264367, 2.270894, 2.277711, 2.284805, 2.292135, 2.299655, 2.307329, 2.315131, 2.323038, 2.331039, 2.339133, 2.347324, 2.355613, 2.364003, 2.372495, 2.381086, 2.389773, 2.398551, 2.407415, 2.416359, 2.42538, 2.434474, 2.443635, 2.452856, 2.462131, 2.471452, 2.480815, 2.490213, 2.499648, 2.509122, 2.518631, 2.528174, 2.537745, 2.547337, 2.556942, 2.566553, 2.576169, 2.585792, 2.595427, 2.605077, 2.614749, 2.624444, 2.634164, 2.643907, 2.653672, 2.663454, 2.673248, 2.683049, 2.692851, 2.702649, 2.712444, 2.722236, 2.73203, 2.741834, 2.751652, 2.761489, 2.771348, 2.781226, 2.791119, 2.80102, 2.810922, 2.820819, 2.830708, 2.840588, 2.850455, 2.860281, 2.870011, 2.879314, 2.887863, 2.895337]
+
+  return alpha_vals, smoothed_softmax_alpha_vals  
+  
+def attention_experiment_new(N : int,
+                         d : int,
+                         alpha_X : float,
+                         alpha_Q : float,
+                         alpha_K : float,
+                         alpha_V : float,
+                         verbose : bool = False
+                         ) -> tuple:
+
+  # N : number of datapoints (batch size)
+  # d : ambient (model) dimension
+  # alpha_X : tail exponent of data manifold X (N * d matrix)
+  # alpha_Q : tail exponent of WQ (d * d matrix)
+  # alpha_K : tail exponent of WK (d * d matrix)
+  # alpha_V : tail exponent of WV (d * d matrix)
+
+  X = generate_data_manifold(N, d, alpha_X)
+  WQ = generate_square_weight_matrix(d, alpha_Q)
+  WK = generate_square_weight_matrix(d, alpha_K)
+  WV = generate_square_weight_matrix(d, alpha_V)
+  
+  dim_X = X.shape[1]
+  dim_WQ = WQ.shape[1]
+  dim_WK = WK.shape[1]
+  dim_WV = WV.shape[1]
+
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  pp_dim_WQ = calculate_PatnaikPearson_dim(WQ)
+  pp_dim_WK = calculate_PatnaikPearson_dim(WK)
+  pp_dim_WV = calculate_PatnaikPearson_dim(WV)
+
+  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(pp_dim_X / dim_X, dim_X)
+  implied_alpha_Q = calculate_alpha_given_nu_over_d_and_d(pp_dim_WQ / dim_WQ, dim_WQ)
+  implied_alpha_K = calculate_alpha_given_nu_over_d_and_d(pp_dim_WK / dim_WK, dim_WK)
+  implied_alpha_V = calculate_alpha_given_nu_over_d_and_d(pp_dim_WV / dim_WV, dim_WV)
+
+  if verbose:
+    print("alpha_X = ", alpha_X, ", pp_dim_X = ", pp_dim_X, ", implied_alpha_X = ", implied_alpha_X)
+    print("alpha_Q = ", alpha_Q, ", pp_dim_WQ = ", pp_dim_WQ, ", implied_alpha_Q = ", implied_alpha_Q)
+    print("alpha_K = ", alpha_K, ", pp_dim_WK = ", pp_dim_WK, ", implied_alpha_K = ", implied_alpha_K)
+    print("alpha_V = ", alpha_V, ", pp_dim_WV = ", pp_dim_WV, ", implied_alpha_V = ", implied_alpha_V)
+
+  XWQ = X @ WQ
+  dim_XWQ = XWQ.shape[1]
+  actual_pp_dim_XWQ = calculate_PatnaikPearson_dim(XWQ)
+  estimate_pp_dim_XWQ = dim_XWQ * estimate_product_nu_over_d(pp_dim_X / dim_XWQ, dim_XWQ, pp_dim_WQ / dim_WQ, dim_WQ)
+  actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWQ / dim_XWQ, dim_XWQ)
+  estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WQ = ", pp_dim_WQ, ", actual_pp_dim_XWQ = ", actual_pp_dim_XWQ, ", estimate_pp_dim_XWQ = ", estimate_pp_dim_XWQ)
+    print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
+
+  XWK = X @ WK
+  dim_XWK = XWK.shape[1]
+  actual_pp_dim_XWK = calculate_PatnaikPearson_dim(XWK)
+  estimate_pp_dim_XWK = dim_XWK * estimate_product_nu_over_d(pp_dim_X / dim_X, dim_X, pp_dim_WK / dim_WK, dim_WK)
+  actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWK / dim_XWK, dim_XWK)
+  estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WK = ", pp_dim_WK, ", actual_pp_dim_XWK = ", actual_pp_dim_XWK, ", estimate_pp_dim_XWK = ", estimate_pp_dim_XWK)
+    print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
+
+  XWV = X @ WV
+  dim_XWV = XWV.shape[1]
+  actual_pp_dim_XWV = calculate_PatnaikPearson_dim(XWV)
+  estimate_pp_dim_XWV = dim_XWV * estimate_product_nu_over_d(pp_dim_X / dim_X, d, pp_dim_WV / dim_WV, dim_WV)
+  actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWV / dim_XWV, dim_XWV)
+  estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WV = ", pp_dim_WV, ", actual_pp_dim_XWV = ", actual_pp_dim_XWV, ", estimate_pp_dim_XWV = ", estimate_pp_dim_XWV)
+    print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
+
+  QKT = XWQ @ XWK.T
+  dim_QKT = QKT.shape[1]
+  actual_pp_dim_QKT = calculate_PatnaikPearson_dim(QKT)
+  estimate_pp_dim_QKT = dim_QKT * estimate_product_nu_over_d(actual_pp_dim_XWQ / dim_QKT, dim_QKT, actual_pp_dim_XWK / dim_XWK, dim_XWK)
+  actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_QKT / dim_QKT, dim_QKT)
+  estimate_alpha_QKT = estimate_product_alpha(implied_alpha_Q, dim_WQ, implied_alpha_K, dim_WK)
+  if verbose:
+    print("pp_dim_WQ = ", pp_dim_WQ, ", pp_dim_WK = ", pp_dim_WK, "actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", estimate_pp_dim_QKT = ", estimate_pp_dim_QKT)
+    print("alpha_Q = ", alpha_Q, ", alpha_K = ", alpha_K, ", actual_alpha_QKT = ", actual_alpha_QKT, "estimate_alpha_QKT = ", estimate_alpha_QKT)
+
+  QKTrescaled = QKT / np.sqrt(d)
+  dim_QKTrescaled = QKTrescaled.shape[1]
+  actual_pp_dim_QKTrescaled = calculate_PatnaikPearson_dim(QKTrescaled)
+  actual_alpha_QKTrescaled = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_QKTrescaled / dim_QKTrescaled, dim_QKTrescaled)
+  if verbose:
+    print("actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
+    print("actual_alpha_QKT = ", actual_alpha_QKT, ",actual_alpha_QKTrescaled = ", actual_alpha_QKTrescaled)
+
+  AttnQK = row_wise_softmax(QKTrescaled)
+  dim_AttnQK = AttnQK.shape[1]
+  actual_pp_dim_AttnQK = calculate_PatnaikPearson_dim(AttnQK)
+  actual_alpha_AttnQK = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_AttnQK / dim_AttnQK, dim_AttnQK)
+  estimate_alpha_AttnQK = calculate_softmax_alpha(actual_alpha_QKTrescaled)
+  if verbose:
+    print("sanity check : N = ", N, ", AttnQK.sum() = ", AttnQK.sum())
+    print("actual_pp_dim_AttnQK = ", actual_pp_dim_AttnQK, ", actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
+    print("actual_alpha_AttnQK = ", actual_alpha_AttnQK, ", estimate_alpha_AttnQK = ", estimate_alpha_AttnQK)
+
+  estimate_pp_dim_AttnQK = dim_AttnQK * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQK, dim_AttnQK)
+
+  AttnQKV = AttnQK @ XWV
+  dim_AttnQKV = AttnQKV.shape[1]
+
+  actual_pp_dim_AttnQKV = (calculate_PatnaikPearson_dim(AttnQKV)).astype(float)
+  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_AttnQKV / dim_AttnQKV, dim_AttnQKV)
+
+  estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
+  estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
+  estimate_alpha_QKT = estimate_product_alpha(estimate_alpha_XWQ, dim_XWQ, estimate_alpha_XWK, dim_XWK)
+  estimate_alpha_softmax_QKT = calculate_softmax_alpha(estimate_alpha_QKT)
+  estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
+  estimate_alpha_AttnQKV = estimate_product_alpha(estimate_alpha_softmax_QKT, dim_QKT, estimate_alpha_XWV, dim_XWV)
+  estimate_pp_dim_AttnQKV = dim_AttnQKV * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+
+  if verbose:
+    print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV, ", estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
+    print("actual_pp_dim_AttnQKV = ", actual_pp_dim_AttnQKV, ", estimate_pp_dim_AttnQKV = ", estimate_pp_dim_AttnQKV)
+
+  return actual_pp_dim_AttnQKV, estimate_pp_dim_AttnQKV, actual_alpha_AttnQKV, estimate_alpha_AttnQKV
+
+def attention_experiment_old(N : int, 
                          d : int, 
                          alpha_X : float, 
                          alpha_Q : float, 
@@ -1840,10 +1955,8 @@ def calculate_nuSigma_for_fixed_alpha_as_d_goes_to_infinity(
   nuSigmaSquared_vals = []
   nuSigmaSquared_over_d_vals = []
   initial_d = 1
-  #num_iterations = 9 #10
   scale_factor = 10
-
-  #alpha = 3.0
+  
   d = initial_d
   for i in range(num_iterations):
     nuSigma, nuSigmaSquared = calculate_nuSigma_nuSigmaSquared(d, alpha)
@@ -1852,7 +1965,6 @@ def calculate_nuSigma_for_fixed_alpha_as_d_goes_to_infinity(
     nuSigma_over_d_vals.append(nuSigma / d)
     nuSigmaSquared_vals.append(nuSigmaSquared)
     nuSigmaSquared_over_d_vals.append(nuSigmaSquared / d)
-    #d = scale_factor * d
     print(alpha, d, nuSigma, nuSigma / d, nuSigmaSquared, nuSigmaSquared / d)
     d = scale_factor * d
 
@@ -2418,7 +2530,6 @@ def generate_N_points_on_k_dim_cubical_surface_in_R_d(
   # enforce that the eccentricities 1.0 and eccentricity both appear
   ecc_scale_matrix = np.zeros((d,d))
   ecc_scale_matrix[0,0] = 1.0
-  #these_eccentricies = np.random.uniform(1, eccentricity, k)
   for i in range(1,k):
     ecc_scale_matrix[i,i] = np.random.uniform(1, eccentricity)
   ecc_scale_matrix[k,k] = eccentricity
@@ -2451,7 +2562,6 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
 
   # initial estimates
   alpha_0 = 2 + (1.0 - nu_over_d)**0.5
-  #_, nu_over_d_0 = calculate_nu_alpha_d_analytic(alpha_0, d)
   _, nu_over_d_0 = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_0, d)
 
   alpha_i = alpha_0
@@ -2466,12 +2576,9 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
     if abs(nu_over_d_i - nu_over_d) < eps:
       return alpha_i
     # newton-raphson method
-    #new_nu, new_nu_over_d = calculate_nu_alpha_d_analytic(alpha_i, d)
     new_nu, new_nu_over_d = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i, d)
     g_i = new_nu_over_d - nu_over_d
-    #_, new_nu_over_d_plus = calculate_nu_alpha_d_analytic(alpha_i + delta_alpha, d)
     _, new_nu_over_d_plus = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i + delta_alpha, d)
-    #_, new_nu_over_d_minus = calculate_nu_alpha_d_analytic(alpha_i - delta_alpha, d)
     _, new_nu_over_d_minus = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i - delta_alpha, d)
     g_prime_i = (new_nu_over_d_plus - new_nu_over_d_minus) / (2.0 * delta_alpha)
 
@@ -2483,8 +2590,7 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
 
     if alpha_i_plus_one < min_alpha_i:
       alpha_i_plus_one = 0.5 * (min_alpha_i + alpha_i)
-
-    #_, nu_over_d_i_plus_one = calculate_nu_alpha_d_analytic(alpha_i_plus_one,d)
+      
     _, nu_over_d_i_plus_one = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_i_plus_one,d)
 
     alpha_i = alpha_i_plus_one
@@ -2580,14 +2686,11 @@ def calculate_nu_alpha_d_analytic(alpha : float, d : int, warning=True) -> tuple
   default_nu_over_d = 0.0
 
   s = 1.0 / (alpha - 1.0)
-  #this_C_alpha = C_alpha(alpha)
-
 
   if alpha < 1.0:
     return default_nu, default_nu_over_d
 
   if abs(alpha - 3.0) < eps:
-    # alpha == 3
     nu_over_d = 4.0 / math.log(d)
     nu = nu_over_d * d
     return nu, nu_over_d
@@ -2630,3 +2733,32 @@ def calculate_conjectured_limiting_value_nu_over_d(alpha : float) -> float:
 
 def C_alpha(alpha : float) -> float:
   return ((alpha - 3.0) * (alpha - 1.0)) / (alpha - 2.0)**2
+  
+def smooth_this_array(input_array : np.ndarray,
+                      smoothing_window_length : int = 10,
+                      num_decimal_places : int = 3) -> np.ndarray:
+
+  len_input_array = input_array.shape[0]
+  smoothing_parameters = np.ones(smoothing_window_length)
+  for i in range(smoothing_window_length):
+    smoothing_parameters[i] = min(i + 1, smoothing_window_length - i)
+  print(smoothing_parameters)
+  smoothing_parameters = smoothing_parameters / np.sum(smoothing_parameters)
+  print(smoothing_parameters)
+
+  len_input_array = input_array.shape[0]
+  len_extended_array = len_input_array + 2 * (smoothing_window_length - 1)
+
+  extended_input_array = np.zeros(len_extended_array)
+  for i in range(len_extended_array):
+    this_index = max(0, min(i - smoothing_window_length + 1, len_input_array - 1))
+    extended_input_array[i] = input_array[this_index]
+
+  smoothed_values_initial = np.convolve(extended_input_array, smoothing_parameters, mode='same')
+  smoothed_values_final = smoothed_values_initial[smoothing_window_length - 2 : -smoothing_window_length]
+
+  dp_factor = 10**num_decimal_places
+  for i in range(len(smoothed_values_final)):
+    smoothed_values_final[i] = round(smoothed_values_final[i] * dp_factor) / dp_factor
+
+  return smoothed_values_final
