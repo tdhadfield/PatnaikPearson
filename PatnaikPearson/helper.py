@@ -1194,6 +1194,35 @@ def calculate_nu(these_lambdas : np.array) -> float:
   nu = (sum_lambda_i ** 2) / sum_lambda_i_squared
   return nu
   
+def calculate_nu_s(s : float, 
+                   these_lambdas : np.array
+                   ) -> float:
+  # generalised nu                      
+  lambdas_to_the_s = this_vec_raise_to_power(these_lambdas,s)
+  return calculate_nu(lambdas_to_the_s)
+
+
+# raise to the power s, for some s > 0
+def raise_to_power(x : float, 
+                   s : float
+                   ) -> float:                     
+  # raise x to the power s
+  return x**s
+
+# vectorize
+this_vec_raise_to_power = np.vectorize(raise_to_power)
+
+def inv_cdf(alpha : float, 
+            y : float
+            ) -> float:
+    eps = 1e-6
+    this_exponent = 1.0 /(alpha - 1.0)
+    one_over_one_minus_y = 1.0 / (1.0 - max(eps,y))
+    return one_over_one_minus_y ** this_exponent
+
+# Apply the function using np.vectorize
+this_vec_inv_cdf = np.vectorize(inv_cdf)
+  
 def calculate_stable_rank(these_lambdas : np.array) -> float:
   these_lambdas_squared = these_lambdas ** 2
   frobenius_norm_squared = sum(these_lambdas_squared)
