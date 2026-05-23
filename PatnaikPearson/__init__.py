@@ -37,6 +37,9 @@ from .helper import softmax
 from .helper import generate_square_weight_matrix
 from .helper import generate_data_manifold
 from .helper import calculate_nu
+from .helper import calculate_nu_s
+from .helper import raise_to_power
+from .helper import inv_cdf
 from .helper import calculate_stable_rank
 from .helper import generate_orthogonal_matrix
 from .helper import calculate_nu_int_dim
