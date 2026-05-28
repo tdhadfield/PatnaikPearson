@@ -48,6 +48,7 @@ from .helper import calculate_PatnaikPearson_dim_cpu
 from .helper import calculate_PatnaikPearson_dim_gpu
 from .helper import twonn_intrinsic_dimension
 from .helper import plot_histogram_of_eigenvalues
+from .helper import clean_array
 from .helper import plot_histogram_of_values
 from .helper import estimate_product_nu_over_d
 from .helper import estimate_product_nu_over_d_base
