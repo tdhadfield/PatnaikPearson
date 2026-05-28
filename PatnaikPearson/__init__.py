@@ -46,6 +46,7 @@ from .helper import calculate_nu_twonn_dim
 from .helper import calculate_PatnaikPearson_dim
 from .helper import calculate_PatnaikPearson_dim_cpu
 from .helper import calculate_PatnaikPearson_dim_gpu
+from .helper import calculate_PatnaikPearson_dim_for_MP
 from .helper import twonn_intrinsic_dimension
 from .helper import plot_histogram_of_eigenvalues
 from .helper import clean_array
@@ -81,3 +82,5 @@ from .helper import calculate_nu_alpha_d_analytic
 from .helper import get_nu_over_d_vals_from_alpha_vals_d
 from .helper import calculate_conjectured_limiting_value_nu_over_d
 from .helper import C_alpha
+from .helper import this_abs
+from .helper import this_log10
