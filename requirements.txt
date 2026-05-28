@@ -5,3 +5,6 @@ seaborn
 scikit-learn
 torch
 transformers
+scipy
+cupy-cuda12x
+pytest
