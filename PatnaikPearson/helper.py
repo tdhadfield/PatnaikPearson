@@ -1313,7 +1313,7 @@ def calculate_nu_cpu(these_lambdas : np.array) -> float:
   return nu
   
 def calculate_nu_gpu(these_lambdas : cp.array) -> float:
-  print("** calculate_nu_gpu ** running on GPU")
+  #print("** calculate_nu_gpu ** running on GPU")
   sum_lambda_i = cp.sum(these_lambdas)
   sum_lambda_i_squared = cp.sum(these_lambdas**2)
   nu = (sum_lambda_i ** 2) / sum_lambda_i_squared
@@ -1733,7 +1733,72 @@ def plot_histogram_of_eigenvalues(input_data : np.ndarray,
 
   return
   
+def clean_array(this_array : list, num_decimal_places : int = 3) -> list:
+  # TO DO : why are all the names here "array" when this deals with lists?
+  new_array = []
+  scale_factor = 10**num_decimal_places
+  for val in this_array:
+    new_val = ((int) (val * scale_factor)) / scale_factor
+    new_array.append(new_val)
+  return new_array
+  
 def plot_histogram_of_values( input_data : np.ndarray,
+                              verbose : bool = False,
+                              rescale_factor : float = 1.0,
+                              num_bins : int = 100,
+                              title_text : str = "",
+                              image_name : str = "test"):
+
+  input_values = input_data.flatten()
+
+  print("summary stats for input values")
+  print("type :", type(input_values))
+  print("shape :", input_values.shape)
+  print("min :", np.min(input_values))
+  print("max :", np.max(input_values))
+  num_dp = 4
+  this_mean = (clean_array([np.mean(input_values)],num_dp))[0]
+  this_std = (clean_array([np.std(input_values)],num_dp))[0]
+  print("mean :", this_mean)
+  print("std :", this_std)
+
+  custom_bins = []
+  this_min = np.min(input_values)
+  this_max = np.max(input_values)
+  this_mid = 0.5 * (this_min + this_max)
+  min_value = this_mid + 1.25 * rescale_factor * (this_min - this_mid)
+  max_value = this_mid + 1.25 * rescale_factor * (this_max - this_mid)
+  #num_bins = 100
+  step_size = (max_value - min_value) / num_bins
+  for i in range(num_bins + 1):
+    custom_bins.append(min_value + i * step_size)
+
+  # Compute histogram with custom bins
+  hist, bin_edges = np.histogram(input_values, bins=custom_bins)
+
+  print("Histogram counts:", hist)
+
+  # Plot histogram
+  this_title = title_text + ", mean = " + str(this_mean) + ", std = " + str(this_std)
+  plt.hist(input_values, bins=custom_bins, edgecolor='black')
+  plt.title(this_title)
+  plt.xlabel("Bins")
+  plt.ylabel("Frequency")
+  plt.savefig(image_name + '.pdf', dpi=300, bbox_inches='tight')
+  plt.show()
+
+  # Plot histogram
+  plt.hist(input_values, bins=custom_bins, edgecolor='black')
+  plt.xscale('log')
+  plt.yscale('log')
+  plt.title("Log/log plot : input values")
+  plt.xlabel("Bins")
+  plt.ylabel("Frequency")
+  plt.show()
+
+  return
+  
+def plot_histogram_of_values_older( input_data : np.ndarray,
                               verbose : bool = False,
                               rescale_factor : float = 1.0,
                               num_bins : int = 100):
