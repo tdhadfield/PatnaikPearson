@@ -1182,7 +1182,24 @@ def gelu_approx(x: np.ndarray) -> np.ndarray:
     ))
     
 def calculate_nu_alpha_d(alpha : float,
-                         d : int
+                         d : int,
+                         uniform_draws : bool = False
+                         ) -> float:
+                             
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?
+
+  these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
+  #for i in range(1,d+1): # 1 <= i <= d
+  #  this_Fx = np.random.uniform(0,1)
+  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
+  #  these_sigmas[i-1] = this_x
+
+  return calculate_nu(these_sigmas)
+  
+def calculate_nu_alpha_d_old(alpha : float,
+                         d : int,
+                         uniform_draws : bool = False
                          ) -> float:
                              
   # uses correct alpha
@@ -1190,7 +1207,9 @@ def calculate_nu_alpha_d(alpha : float,
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = np.random.uniform(0,1)
+    this_Fx = i / (d+1)
+    if not uniform_draws: 
+        this_Fx = np.random.uniform(0,1)
     this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
 
@@ -2508,7 +2527,7 @@ def generate_pareto_draws(d : int, alpha : float, uniform_draws : bool = False) 
     
     these_Fx = np.zeros(d)
     if uniform_draws:
-        these_Fx = np.arange(1,d+1,1) / (d+1)
+        these_Fx = np.arange(1,d+1,1) / float(d+1.0)
         #this_Fx = i / (d+1)
     else:
         these_Fx = np.random.uniform(0,1,d)
