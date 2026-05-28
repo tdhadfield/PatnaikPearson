@@ -1263,8 +1263,8 @@ def generate_square_weight_matrix(d : int,
   if use_gpu:
     print(" ** generate_square_weight_matrix: using GPU **")
     Wdiag = cp.diag(these_sigmas)
-    Wleft = generate_orthogonal_matrix_gpu(d)
-    Wright = generate_orthogonal_matrix_gpu(d)
+    Wleft = cp.array(generate_orthogonal_matrix(d))
+    Wright = cp.array(generate_orthogonal_matrix(d))
     W = cp.matmul(cp.matmul(Wleft, Wdiag), Wright)
     return cp.asnumpy(W)
   else:
@@ -1897,7 +1897,9 @@ def estimate_product_nu_over_d(nu_over_d_1 : float,
   
   print("** estimate_product_nu_over_d: use new alpha - check the interpolation thresholds **")
 
-  return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
+  #return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
+  
+  return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=0.5, upper_interpolation_threshold=1.6)
 
 def estimate_product_nu_over_d_base(nu_over_d_1 : float,
                                     d_1 : int,
@@ -1926,14 +1928,17 @@ def estimate_product_alpha(alpha_1 : float,
                            d_2 : int
                            ) -> float:
 
-  return estimate_product_alpha_base(alpha_1, d_1, alpha_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
+  #return estimate_product_alpha_base(alpha_1, d_1, alpha_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
+  return estimate_product_alpha_base(alpha_1, d_1, alpha_2, d_2, lower_interpolation_threshold=0.5, upper_interpolation_threshold=1.6)
 
 def estimate_product_alpha_base(alpha_1 : float,
                                 d_1 : int,
                                 alpha_2 : float,
                                 d_2 : int,
-                                lower_interpolation_threshold : float = 1.5,
-                                upper_interpolation_threshold : float = 2.6
+                                lower_interpolation_threshold : float = 0.5,
+                                #lower_interpolation_threshold : float = 1.5,
+                                upper_interpolation_threshold : float = 1.6
+                                #upper_interpolation_threshold : float = 2.6
                            ) -> float:
                                
                               
@@ -3341,3 +3346,53 @@ def this_log10(x):
 
 # Apply the function using np.vectorize
 this_vec_log10 = np.vectorize(this_log10)
+
+def product_alpha_experiment(N : int,
+                             d : int,
+                             alpha_X : float,
+                             alpha_W : float
+                             ) -> tuple:
+                                 
+  # ** TO DO : adapt to GPU?
+
+  this_N = N
+  this_d = d
+
+  X = generate_data_manifold(this_N, this_d, alpha_X)
+  W = generate_square_weight_matrix(this_d, alpha_W)
+
+  pp_dim_X = calculate_PatnaikPearson_dim(X, verbose=False)
+  pp_dim_W = calculate_PatnaikPearson_dim(W, verbose=False)
+
+  dim_X = X.shape[1]
+  dim_W = W.shape[1]
+
+  nu_over_d_X = pp_dim_X / dim_X
+  nu_over_d_W = pp_dim_W / dim_W
+
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+  actual_alpha_W = calculate_alpha_given_nu_over_d_and_d(nu_over_d_W, dim_W)
+
+  XW = X @ W
+  pp_dim_XW = calculate_PatnaikPearson_dim(XW, verbose=False)
+  nu_over_d_XW = pp_dim_XW / this_d
+  alpha_XW = calculate_alpha_given_nu_over_d_and_d(nu_over_d_XW, this_d)
+
+  nu_over_d_XW_estimate = estimate_product_nu_over_d(nu_over_d_X, this_d, nu_over_d_W, this_d)
+  pp_dim_XW_estimate = nu_over_d_XW_estimate * this_d
+  alpha_XW_estimate = calculate_alpha_given_nu_over_d_and_d(nu_over_d_XW_estimate, this_d)
+
+  results_dict = {}
+  results_dict["alpha_XW"] = alpha_XW
+  results_dict["alpha_XW_estimate"] = alpha_XW_estimate
+  results_dict["actual_alpha_X"] = actual_alpha_X
+  results_dict["actual_alpha_W"] = actual_alpha_W
+  results_dict["pp_dim_X"] = pp_dim_X
+  results_dict["pp_dim_W"] = pp_dim_W
+  results_dict["pp_dim_XW"] = pp_dim_XW
+  results_dict["nu_over_d_X"] = nu_over_d_X
+  results_dict["nu_over_d_W"] = nu_over_d_W
+  results_dict["nu_over_d_XW"] = nu_over_d_XW
+  results_dict["nu_over_d_XW_estimate"] = nu_over_d_XW_estimate
+
+  return results_dict
