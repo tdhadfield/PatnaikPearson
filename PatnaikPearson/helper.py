@@ -1573,6 +1573,22 @@ def calculate_PatnaikPearson_dim_gpu(
   return patnaik_pearson_dim
   
   
+def calculate_PatnaikPearson_dim_for_MP(d : int, 
+                                        aspect_ratio : float,
+                                        force_cpu : bool = False
+                                        ) -> float:
+
+  N = (int) (d / aspect_ratio)
+  
+  if use_gpu and not force_cpu:
+    X = cp.random.normal(loc=0.0, scale=1.0, size=(d, N))
+    Yd = cp.asnumpy((1.0 / N) * cp.matmul( X, X.T))
+    return calculate_PatnaikPearson_dim(Yd)
+  else:
+    X = np.random.normal(loc=0.0, scale=1.0, size=(d, N))
+    Yd = (1.0 / N) * X @ X.T
+    return calculate_PatnaikPearson_dim(Yd)
+  
 def twonn_intrinsic_dimension(X : np.ndarray,
                                plot_fit : bool = True,
                                use_cosine_similarity : bool = False,
@@ -1682,6 +1698,8 @@ def twonn_intrinsic_dimension(X : np.ndarray,
 
     return intrinsic_dim
    
+   
+
 def plot_histogram_of_eigenvalues(input_data : np.ndarray,
                                   verbose : bool = False,
                                   rescale_factor : float = 1.0,
@@ -3289,3 +3307,18 @@ def smooth_this_array(input_array : np.ndarray,
     smoothed_values_final[i] = round(smoothed_values_final[i] * dp_factor) / dp_factor
 
   return smoothed_values_final
+  
+# apply log to an array by vectorisation
+def this_abs(x):
+  return abs(x)
+
+# Apply the function using np.vectorize
+this_vec_abs = np.vectorize(this_abs)
+
+# apply log to an array by vectorisation
+def this_log10(x):
+  eps=1e-6
+  return math.log10(max(x,eps))
+
+# Apply the function using np.vectorize
+this_vec_log10 = np.vectorize(this_log10)
