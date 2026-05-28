@@ -3,6 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import math
+import cupy as cp
+#import scikit-learn as sklearn
+from sklearn.neighbors import NearestNeighbors
+from scipy.linalg import qr
+
+np.random.seed(42)
+use_gpu = torch.cuda.is_available()
 
 def say_hello(this_name="world"):
     return f"Hello, {this_name}!" 
@@ -137,6 +144,8 @@ def generate_embedding_weights_summary_stats(these_embeddings, rescale_factor = 
   
 def generate_embedding_norm_summary_stats(these_embeddings, rescale_factor = 1.0):
     
+  # ** TO DO : adapt to GPU?
+    
   print("summary stats for the norms of token embeddings")
   print("type :", type(these_embeddings))
   print("shape :", these_embeddings.shape)
@@ -179,6 +188,8 @@ def generate_embedding_norm_summary_stats(these_embeddings, rescale_factor = 1.0
   return
   
 def generate_norm_similarities(these_embeddings, num_random_indices=100, eps=0.0, rescale_factor = 1.0):
+    
+  # ** TO DO : adapt to GPU?
     
   print("generate_norm_similarities()")
   print("generate a number of random indices. take the corresponding embeddings, and rescale them to have norm 1. generate the symmetric matrix of dot products of these embeddings")  
@@ -242,6 +253,8 @@ def generate_norm_similarities(these_embeddings, num_random_indices=100, eps=0.0
 # normalise all vectors : first, demean; second, normalise
 def normalise_vectors(all_vectors, demean=True, verbose=False):
     
+  # ** TO DO : adapt to GPU?
+    
   if verbose:
       print("normalise_vectors")
       print("normalise all vectors, one by one : first, demean (optional); second, rescale to norm 1")
@@ -269,6 +282,8 @@ def normalise_vectors(all_vectors, demean=True, verbose=False):
   return final_vectors
   
 def normalise_single_vector(this_vector, demean=True, verbose = False):
+    
+    # ** TO DO : adapt to GPU?
 
     if verbose:
         print("this_vector.shape = ", this_vector.shape)
@@ -288,6 +303,8 @@ def normalise_single_vector(this_vector, demean=True, verbose = False):
     return result
 
 def residualise(these_vectors, this_residualiser, normalise=False, demean=True, verbose=False):
+    
+    # ** TO DO : adapt to GPU?
     
     print("residualise : demean = ", demean)
 
@@ -328,6 +345,8 @@ def residualise(these_vectors, this_residualiser, normalise=False, demean=True, 
 
 
 def sparsify(these_vectors, demean=True, verbose = False, similarity_threshold = 0.99):
+    
+  # ** TO DO : adapt to GPU?
     
   if verbose:
       print("take a (large) collection of vectors, and reduce it to a smaller collection by sparsification")
@@ -374,6 +393,9 @@ def sparsify(these_vectors, demean=True, verbose = False, similarity_threshold =
   
 # distance between two 1-dimensional numpy arrays
 def get_euclidean_dist(x, y, verbose=False):
+    
+  # ** TO DO : adapt to GPU?
+  
   if verbose:
       print("Euclidean distance between two 1-dimensional numpy arrays")
       print("x.shape = ", x.shape)
@@ -393,6 +415,8 @@ def get_euclidean_dist(x, y, verbose=False):
   
   
 def generate_distance_matrix(these_vectors, demean=True, verbose=False):
+    
+  # ** TO DO : adapt to GPU?
     
   if verbose:
       print("generate_distance_matrix : given a collection of vectors (data points), generate the symmetric matrix of pairwise euclidean distances")
@@ -527,6 +551,8 @@ def bert_base_inference_include_positional_embeddings(this_model, these_inputs, 
   return final_layer
   
 def get_average_valid_bert_base_embedding():
+    
+   # ** TO DO : deprecate
 
     avg = np.array([ 1.13084192e-02, -1.72215811e-02, -1.41714168e-02, -2.74185247e-02,
    2.98537331e-02, -6.42583949e-03, -2.42618347e-02,  4.16709138e-03,
@@ -726,6 +752,7 @@ def get_average_valid_bert_base_embedding():
 
 def generate_normalised_random_vectors_with_one_common_component(num_vectors, embedding_dim, desired_correlation, demean=True, verbose=False):
     
+    # ** TO DO : adapt to GPU?
     # generate the initial random embeddings
     random_embeddings_0 = np.random.randn(num_vectors, embedding_dim)
 
@@ -757,6 +784,8 @@ def generate_normalised_random_vectors_with_one_common_component(num_vectors, em
     return random_embeddings_2
     
 def demean_embeddings(these_embeddings, verbose=True):
+    
+    # ** TO DO : adapt to GPU?
     these_embeddings_mean = np.mean(these_embeddings)
     if verbose:
         print("these_embeddings_mean =", these_embeddings_mean)
@@ -951,6 +980,9 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
   # d is the dimension of the ambient space
   # W is an d * d matrix
   # WTW is a d * d matrix
+  
+  # ** TO DO : use new alpha
+  # ** TO DO : adapt to GPU?
 
 
   W = generate_square_weight_matrix(d, alpha)
@@ -971,7 +1003,16 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
     print("actual_nu_WTW_over_dim_WTW = ", actual_nu_WTW_over_dim_WTW, "estimate_nu_WTW_over_dim_WTW = ", estimate_nu_WTW_over_dim_WTW)
     print("actual_alpha_WTW = ", actual_alpha_WTW, "estimate_alpha_WTW = ", estimate_alpha_WTW)
 
-  return actual_nu_W_over_dim_W, actual_alpha_W, actual_nu_WTW_over_dim_WTW, estimate_nu_WTW_over_dim_WTW, actual_alpha_WTW, estimate_alpha_WTW
+  results_dict = { 
+    "actual_nu_W_over_dim_W" : actual_nu_W_over_dim_W,
+    "actual_alpha_W" : actual_alpha_W,
+    "actual_nu_WTW_over_dim_WTW" :  actual_nu_WTW_over_dim_WTW,
+    "estimate_nu_WTW_over_dim_WTW" :  estimate_nu_WTW_over_dim_WTW,
+    "actual_alpha_WTW" :  actual_alpha_WTW,
+    "estimate_alpha_WTW" : estimate_alpha_WTW
+    }
+   
+  return results_dict
   
 def calculate_nu_alpha_X_XTX_XXT(N : int, 
                                  d : int, 
@@ -984,12 +1025,16 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   # X is an N * d matrix
   # XTX is a d * d matrix
   # XXT is an N * N matrix
+  
+  # ** TO DO : use new alpha
+  # ** TO DO : adapt to GPU?
 
 
   X = generate_data_manifold(N, d, alpha)
   dim_X = X.shape[1]
   actual_nu_X_over_dim_X = calculate_PatnaikPearson_dim(X) / dim_X
   actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(actual_nu_X_over_dim_X, dim_X)
+  
   if verbose:
     print("alpha = ", alpha, ", actual_alpha_X = ", actual_alpha_X, ", actual_nu_X_over_dim_X = ", actual_nu_X_over_dim_X)
 
@@ -999,6 +1044,7 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   estimate_nu_XTX_over_dim_XTX = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
   actual_alpha_XTX = calculate_alpha_given_nu_over_d_and_d(actual_nu_XTX_over_dim_XTX, dim_XTX) 
   estimate_alpha_XTX = estimate_product_alpha(actual_alpha_X, dim_X, actual_alpha_X, dim_X)
+  
   if verbose:
     print("dim_XTX = ", dim_XTX)
     print("actual_nu_XTX_over_dim_XTX = ", actual_nu_XTX_over_dim_XTX, "estimate_nu_XTX_over_dim_XTX = ", estimate_nu_XTX_over_dim_XTX)
@@ -1010,12 +1056,26 @@ def calculate_nu_alpha_X_XTX_XXT(N : int,
   estimate_nu_XXT_over_dim_XXT = estimate_product_nu_over_d(actual_nu_X_over_dim_X, actual_nu_X_over_dim_X)
   actual_alpha_XXT = calculate_alpha_given_nu_over_d_and_d(actual_nu_XXT_over_dim_XXT, dim_XXT) 
   estimate_alpha_XXT = estimate_product_alpha(actual_alpha_X, dim_X, actual_alpha_X, dim_X)
+  
   if verbose:
     print("dim_XXT = ", dim_XXT)
     print("actual_nu_XXT_over_dim_XXT = ", actual_nu_XXT_over_dim_XXT, "estimate_nu_XXT_over_dim_XXT = ", estimate_nu_XXT_over_dim_XXT)
     print("actual_alpha_XXT = ", actual_alpha_XXT, "estimate_alpha_XXT = ", estimate_alpha_XXT)
 
-  return actual_nu_X_over_dim_X, actual_alpha_X, actual_nu_XTX_over_dim_XTX, estimate_nu_XTX_over_dim_XTX, actual_alpha_XTX, estimate_alpha_XTX, actual_nu_XXT_over_dim_XXT, estimate_nu_XXT_over_dim_XXT, actual_alpha_XXT, estimate_alpha_XXT
+  results_dict = { 
+    "actual_nu_X_over_dim_X" :  actual_nu_X_over_dim_X,
+    "actual_alpha_X" : actual_alpha_X,
+    "actual_nu_XTX_over_dim_XTX" : actual_nu_XTX_over_dim_XTX,
+    "estimate_nu_XTX_over_dim_XTX" : estimate_nu_XTX_over_dim_XTX,
+    "actual_alpha_XTX" : actual_alpha_XTX, 
+    "estimate_alpha_XTX" : estimate_alpha_XTX,
+    "actual_nu_XXT_over_dim_XXT" :  actual_nu_XXT_over_dim_XXT,
+    "estimate_nu_XXT_over_dim_XXT" : estimate_nu_XXT_over_dim_XXT, 
+    "actual_alpha_XXT" :  actual_alpha_XXT,
+    "estimate_alpha_XXT" : estimate_alpha_XXT
+    }
+    
+  return results_dict
     
 def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = False) -> tuple:
   
@@ -1064,7 +1124,18 @@ def experiment_relu_X_gelu_X_tanh_X(N : int, d : int, alpha : float, verbose = F
     print("actual_alpha_tanhX = ", actual_alpha_tanhX)
     print("actual_nu_tanhX_over_dim_tanhX = ", actual_nu_tanhX_over_dim_tanhX)
 
-  return actual_nu_X_over_dim_X, actual_alpha_X, actual_nu_reluX_over_dim_reluX, actual_alpha_reluX, actual_nu_geluX_over_dim_geluX, actual_alpha_geluX, actual_nu_tanhX_over_dim_tanhX, actual_alpha_tanhX
+  results_dict = { 
+    "actual_nu_X_over_dim_X" :  actual_nu_X_over_dim_X,
+    "actual_alpha_X" : actual_alpha_X, 
+    "actual_nu_reluX_over_dim_reluX" : actual_nu_reluX_over_dim_reluX,
+    "actual_alpha_reluX" :  actual_alpha_reluX,
+    "actual_nu_geluX_over_dim_geluX" : actual_nu_geluX_over_dim_geluX,
+    "actual_alpha_geluX" : actual_alpha_geluX, 
+    "actual_nu_tanhX_over_dim_tanhX" : actual_nu_tanhX_over_dim_tanhX,
+    "actual_alpha_tanhX" : actual_alpha_tanhX
+    }
+    
+  return results_dict
 
 # apply relu to an array by vectorisation
 def this_relu(x):
@@ -1113,11 +1184,14 @@ def gelu_approx(x: np.ndarray) -> np.ndarray:
 def calculate_nu_alpha_d(alpha : float,
                          d : int
                          ) -> float:
+                             
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
 
   return calculate_nu(these_sigmas)
@@ -1127,6 +1201,8 @@ def row_wise_softmax(input_array : np.ndarray,
                      ) -> np.ndarray:
 
   # input_array is assumed to be N * d
+  
+  # ** TO DO : adapt to GPU?
 
   this_softmax = np.zeros(input_array.shape)
   num_rows = input_array.shape[0]
@@ -1139,6 +1215,8 @@ def row_wise_softmax(input_array : np.ndarray,
 def softmax(input_array : np.ndarray,
             temperature : float
             ) -> np.ndarray:
+                
+    # ** TO DO : adapt to GPU?
 
     """Compute softmax values for each sets of scores in x."""
 
@@ -1153,44 +1231,91 @@ def generate_square_weight_matrix(d : int,
 
   # d is the dimension of the square matrix, which will be d * d
   # alpha is the tail exponent of the singular values of the matrix
+  
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
-
-  Wdiag = np.diag(these_sigmas)
-  Wleft = generate_orthogonal_matrix(d)
-  Wright = generate_orthogonal_matrix(d)
-  W = Wleft @ Wdiag @ Wright
-  return W
+    
+  if use_gpu:
+    print(" ** generate_square_weight_matrix: using GPU **")
+    Wdiag = cp.diag(these_sigmas)
+    Wleft = generate_orthogonal_matrix_gpu(d)
+    Wright = generate_orthogonal_matrix_gpu(d)
+    W = cp.matmul(cp.matmul(Wleft, Wdiag), Wright)
+    return cp.asnumpy(W)
+  else:
+    print(" ** generate_square_weight_matrix: using CPU **")
+    Wdiag = np.diag(these_sigmas)
+    Wleft = generate_orthogonal_matrix(d)
+    Wright = generate_orthogonal_matrix(d)
+    W = Wleft @ Wdiag @ Wright
+    return W
   
 def generate_data_manifold(N : int,
                            d : int,
-                           alpha : float
+                           alpha : float,
+                           verbose : bool = False
                            ) -> np.ndarray:
 
   # N is the number of points in our realisation X of our data manifold
   # d is the dimension of the ambient space
   # alpha is the tail exponent
+  
+  # uses correct alpha
+  
+  #use_gpu = torch.cuda.is_available()
+  
   X0 = np.random.randn(N, d)
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
 
   Xdiag = np.diag(these_sigmas)
-
-  X = X0 @ Xdiag
+  
+  if use_gpu:
+      if verbose:
+        print("running on GPU")
+      X0_gpu = cp.array(X0)  # move to GPU
+      Xdiag_gpu = cp.array(Xdiag)  # move to GPU 
+      X_gpu = cp.matmul(X0_gpu, Xdiag_gpu)  # runs on GPU
+      X = cp.asnumpy(X_gpu)  # move back to numpy
+  else:
+    if verbose:
+      print("running on CPU")
+    X = X0 @ Xdiag
 
   return X
   
-def calculate_nu(these_lambdas : np.array) -> float:
+def calculate_nu(these_lambdas : np.array, 
+                 force_cpu : bool = False
+                 ) -> float:
+    
+  #use_gpu = torch.cuda.is_available():
+  if use_gpu and not force_cpu:
+      return calculate_nu_gpu(cp.array(these_lambdas))
+  else:
+      return calculate_nu_cpu(these_lambdas)
+      
+  
+def calculate_nu_cpu(these_lambdas : np.array) -> float:
+  print("** calculate_nu_cpu ** running on CPU")
   sum_lambda_i = sum(these_lambdas)
   sum_lambda_i_squared = sum(these_lambdas**2)
+  nu = (sum_lambda_i ** 2) / sum_lambda_i_squared
+  return nu
+  
+def calculate_nu_gpu(these_lambdas : cp.array) -> float:
+  print("** calculate_nu_gpu ** running on GPU")
+  sum_lambda_i = cp.sum(these_lambdas)
+  sum_lambda_i_squared = cp.sum(these_lambdas**2)
   nu = (sum_lambda_i ** 2) / sum_lambda_i_squared
   return nu
   
@@ -1212,40 +1337,83 @@ def raise_to_power(x : float,
 # vectorize
 this_vec_raise_to_power = np.vectorize(raise_to_power)
 
-def inv_cdf(alpha : float, 
+def inv_pareto_cdf(alpha : float, 
             y : float
             ) -> float:
+                
+    # now uses correct value of alpha 
+    
     eps = 1e-6
-    this_exponent = 1.0 /(alpha - 1.0)
-    one_over_one_minus_y = 1.0 / (1.0 - max(eps,y))
+    #this_exponent = 1.0 /(alpha - 1.0) # OLD
+    this_exponent = 1.0 /alpha # NEW
+    one_over_one_minus_y = 1.0 / max(eps,1.0 - max(eps,y))
     return one_over_one_minus_y ** this_exponent
 
 # Apply the function using np.vectorize
-this_vec_inv_cdf = np.vectorize(inv_cdf)
+this_vec_inv_pareto_cdf = np.vectorize(inv_pareto_cdf)
   
 def calculate_stable_rank(these_lambdas : np.array) -> float:
-  these_lambdas_squared = these_lambdas ** 2
-  frobenius_norm_squared = sum(these_lambdas_squared)
-  operator_norm_squared = max(these_lambdas_squared)
+    
+  # adapted to GPU
+  
+  frobenius_norm_squared = 0.0
+  operator_norm_squared = 0.0
+  
+  if use_gpu:
+    cp_these_lambdas = cp.array(these_lambdas)
+    these_lambdas_squared = cp_these_lambdas ** 2
+    frobenius_norm_squared = cp.sum(these_lambdas_squared)
+    operator_norm_squared = cp.max(these_lambdas_squared)
+  else: # CPU  
+    these_lambdas_squared = these_lambdas ** 2
+    frobenius_norm_squared = sum(these_lambdas_squared)
+    operator_norm_squared = max(these_lambdas_squared)
+    
   eps = 1e-6
   stable_rank = 0.0
   if operator_norm_squared > eps:
     stable_rank = frobenius_norm_squared / operator_norm_squared
   return stable_rank
   
+#def generate_orthogonal_matrix(dim : int) -> np.ndarray:
+#  """
+#  generate an orthogonal matrix of dimension dim
+#  """
+#  if use_gpu:
+#    return generate_orthogonal_matrix_gpu(dim)
+#  else:
+#    return generate_orthogonal_matrix_cpu(dim)
+      
+  
 def generate_orthogonal_matrix(dim : int) -> np.ndarray:
   """
   generate an orthogonal matrix of dimension dim
   """
+  
   H = np.random.randn(dim, dim)
-  Q, R = qr(H)
+  Q, R = np.linalg.qr(H)
+  #Q, R = qr(H)
   Q *= np.sign(np.diag(R)) # Ensure positive diagonal
   return Q
   
-def calculate_nu_int_dim(
+#def generate_orthogonal_matrix_gpu_doesnt_work(dim : int) -> np.ndarray:
+#  """
+#  generate an orthogonal matrix of dimension dim
+#  """
+  
+#  # ** TO DO : adapt to GPU? Need QR decomposition for cp
+  
+#  H = cp.random.randn(dim, dim)
+#  Q, R = qr(H) # this doesn't work for cp?
+#  Q *= cp.sign(cp.diag(R)) # Ensure positive diagonal
+#  return cp.asnumpy(Q)
+  
+def calculate_nu_twonn_dim(
 	input_data : np.ndarray,
 	verbose : bool = False
 	) -> tuple[float, float]:
+        
+  # ** TO DO : adapt to GPU?
 
 
   X = input_data
@@ -1288,14 +1456,28 @@ def calculate_nu_int_dim(
   if verbose:
     print("nu = ", nu)
 
-  int_dim = two_nn_intrinsic_dimension(X, plot_fit=verbose)
+  twonn_dim = twonn_intrinsic_dimension(X, plot_fit=verbose)
 
-  return nu, int_dim
+  return nu, twonn_dim
   
 def calculate_PatnaikPearson_dim(
 	input_data : np.ndarray,
 	verbose : bool = False
 	) -> float:
+        
+  if use_gpu:
+      return calculate_PatnaikPearson_dim_gpu(input_data, verbose)
+  else:
+      return calculate_PatnaikPearson_dim_cpu(input_data, verbose)
+      
+  
+def calculate_PatnaikPearson_dim_cpu(
+	input_data : np.ndarray,
+	verbose : bool = False
+	) -> float:
+        
+  if verbose:
+    print("reached calculate_PatnaikPearson_dim_cpu")
 
   X = input_data
   this_N = X.shape[0]
@@ -1339,11 +1521,66 @@ def calculate_PatnaikPearson_dim(
 
   return patnaik_pearson_dim
   
-def two_nn_intrinsic_dimension(X : np.ndarray,
+  
+def calculate_PatnaikPearson_dim_gpu(
+	input_data : np.ndarray,
+	verbose : bool = False
+	) -> float:
+        
+  if verbose:
+      print("reached calculate_PatnaikPearson_dim_gpu")
+
+  X = cp.array(input_data)
+  this_N = X.shape[0]
+  this_d = X.shape[1]
+  if verbose:
+    plot_histogram_of_values(input_data, verbose=True, rescale_factor=1.0, num_bins=100)
+
+  # calculate mu, the average of the N column vectors
+  mu = X.sum(axis=0) / this_N
+  if verbose:
+    plot_histogram_of_values(cp.asnumpy(mu), verbose=True, rescale_factor=1.0, num_bins=100)
+
+  Xdemeaned = X - mu
+  if verbose:
+    plot_histogram_of_values(cp.asnumpy(Xdemeaned), verbose=True, rescale_factor=1.0, num_bins=100)
+
+  U, S, Vh = cp.linalg.svd(Xdemeaned, full_matrices=True)
+
+  # Print the shapes of the resulting matrices
+  if verbose:
+    print("U shape:", U.shape)
+    print("S shape:", S.shape)
+    print("Vh shape:", Vh.shape)
+
+  # Reconstruct the original matrix
+  Sigma = cp.zeros((this_N, this_d))
+  for i in range(min(this_N,this_d)):
+    Sigma[i, i] = S[i]
+  Xdemeaned_reconstructed = cp.matmul(cp.matmul(U, Sigma), Vh)
+
+  # Verify the reconstruction
+  if verbose:
+    print("Reconstruction error:", cp.linalg.norm(Xdemeaned - Xdemeaned_reconstructed))
+
+  if verbose:
+    plot_histogram_of_values(cp.asnumpy(cp.linalg.norm(S)))
+
+  patnaik_pearson_dim = calculate_nu_gpu(S)
+  if verbose:
+    print("patnaik_pearson_dim = ", patnaik_pearson_dim)
+
+  return patnaik_pearson_dim
+  
+  
+def twonn_intrinsic_dimension(X : np.ndarray,
                                plot_fit : bool = True,
                                use_cosine_similarity : bool = False,
                                discard_proportion : float = 0.0
                                ) -> float:
+                                   
+    # ** TO DO : adapt to GPU?
+                                   
     """
     Estimates the Intrinsic Dimension (ID) of a dataset using the TWO-NN algorithm.
     Args:
@@ -1549,10 +1786,14 @@ def estimate_product_nu_over_d(nu_over_d_1 : float,
                                nu_over_d_2 : float,
                                d_2 : int
                                ) -> float:
+                                   
+  # ** TO DO : use new alpha - check the interpolation thresholds                               
                                
   # calculate alpha_1 corresponding to nu_over_d_1, and alpha_2 corresponding to nu_over_d_2
   # calculate the corresponding product_alpha
   # calculate the corresponding nu_over_d
+  
+  print("** estimate_product_nu_over_d: use new alpha - check the interpolation thresholds **")
 
   return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
 
@@ -1592,6 +1833,10 @@ def estimate_product_alpha_base(alpha_1 : float,
                                 lower_interpolation_threshold : float = 1.5,
                                 upper_interpolation_threshold : float = 2.6
                            ) -> float:
+                               
+                              
+  # ** TO DO : use new alpha
+  # ** TO DO : adapt to GPU?
 
   # if min(alpha_1, alpha_2) < lower, then product_alpha is min(alpha_1, alpha_2)
   # if min(alpha_1, alpha_2) > upper, then, calculate the corresponding nu_over_d 's, take the product of these, find the corresponding alpha
@@ -1617,6 +1862,9 @@ def estimate_product_alpha_base(alpha_1 : float,
   return result
   
 def calculate_nu_over_d_given_alpha_and_d(alpha : float, d : int) -> float:
+    
+    # ** TO DO : use new alpha
+    # ** TO DO : adapt to GPU?
     
     _, nu_over_d = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha, d)
     return nu_over_d
@@ -1692,6 +1940,11 @@ def smooth_this_array(input_array : np.ndarray,
   return smoothed_values_final
   
 def calculate_softmax_alpha(alpha : float) -> float:
+    
+  # ** TO DO : use new alpha
+  # ** TO DO : adapt to GPU?
+  
+  print(" ** calculate_softmax_alpha : need to re-do hardcoded values ** ")
 
   alpha_vals, softmax_alpha_vals = get_alpha_vals_softmax_alpha_vals()
 
@@ -1732,6 +1985,10 @@ def get_alpha_vals_softmax_alpha_vals_old() -> tuple:
   
 def get_alpha_vals_softmax_alpha_vals() -> tuple:
     
+  print("** get_alpha_vals_softmax_alpha_vals : need to recalculate for new alpha **")
+    
+  # ** TO DO : recalculate for new alpha
+    
   # recalculated, with d = 1000
 
   alpha_vals =  [1.292893, 1.292893, 1.292893, 1.292894, 1.292897, 1.292911, 1.292955, 1.293055, 1.293245, 1.293557, 1.294038, 1.294684, 1.295543, 1.296625, 1.29794, 1.299504, 1.301304, 1.303359, 1.305674, 1.30818, 1.310943, 1.313959, 1.317188, 1.320625, 1.324296, 1.328177, 1.332258, 1.336529, 1.340988, 1.34566, 1.350474, 1.355493, 1.36074, 1.366138, 1.371566, 1.377244, 1.383176, 1.389214, 1.395392, 1.401758, 1.408105, 1.414957, 1.421658, 1.428517, 1.435682, 1.44288, 1.450256, 1.457864, 1.465347, 1.473098, 1.480941, 1.489303, 1.497161, 1.50557, 1.514234, 1.522268, 1.53083, 1.539429, 1.548303, 1.557392, 1.566224, 1.575139, 1.584542, 1.593386, 1.602557, 1.611905, 1.621286, 1.630603, 1.640193, 1.649601, 1.659092, 1.668721, 1.678427, 1.688029, 1.69767, 1.707359, 1.717062, 1.727011, 1.736628, 1.746348, 1.756148, 1.765976, 1.775763, 1.785947, 1.795428, 1.805268, 1.815131, 1.825009, 1.835023, 1.844704, 1.85459, 1.864619, 1.874391, 1.884239, 1.894139, 1.90406, 1.914272, 1.923841, 1.933891, 1.943743, 1.953564, 1.963465, 1.973343, 1.983339, 1.993174, 2.003159, 2.013044, 2.023106, 2.032828, 2.04332, 2.05269, 2.06262, 2.072651, 2.082727, 2.092496, 2.102354, 2.112365, 2.12214, 2.132094, 2.1424, 2.151961, 2.161999, 2.171999, 2.181854, 2.192106, 2.201747, 2.211629, 2.221516, 2.231549, 2.241479, 2.251745, 2.261446, 2.27138, 2.281283, 2.29184, 2.301444, 2.311139, 2.321141, 2.33107, 2.340925, 2.350903, 2.36081, 2.370808, 2.381072, 2.390697, 2.400742, 2.410749, 2.420992, 2.430669, 2.440715, 2.450659, 2.460663, 2.471043, 2.480436, 2.490421, 2.500754, 2.510341, 2.520477, 2.530428, 2.540407, 2.550483, 2.560484, 2.570312, 2.580127, 2.590095, 2.600188, 2.610322, 2.620473, 2.63057, 2.640249, 2.650178, 2.659955, 2.670189, 2.680027, 2.69045, 2.700059, 2.71023, 2.720053, 2.729786, 2.740007, 2.749726, 2.760061, 2.769698, 2.779888, 2.789871, 2.800134, 2.809785, 2.81996, 2.830041, 2.839753, 2.849761, 2.859562, 2.87007, 2.87968, 2.889508, 2.899799, 2.909613, 2.919539, 2.929829]
@@ -1748,6 +2005,9 @@ def attention_experiment_new(N : int,
                          alpha_V : float,
                          verbose : bool = False
                          ) -> tuple:
+                             
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?                        
 
   # N : number of datapoints (batch size)
   # d : ambient (model) dimension
@@ -1788,6 +2048,7 @@ def attention_experiment_new(N : int,
   estimate_pp_dim_XWQ = dim_XWQ * estimate_product_nu_over_d(pp_dim_X / dim_XWQ, dim_XWQ, pp_dim_WQ / dim_WQ, dim_WQ)
   actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWQ / dim_XWQ, dim_XWQ)
   estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
+  
   if verbose:
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WQ = ", pp_dim_WQ, ", actual_pp_dim_XWQ = ", actual_pp_dim_XWQ, ", estimate_pp_dim_XWQ = ", estimate_pp_dim_XWQ)
     print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
@@ -1798,6 +2059,7 @@ def attention_experiment_new(N : int,
   estimate_pp_dim_XWK = dim_XWK * estimate_product_nu_over_d(pp_dim_X / dim_X, dim_X, pp_dim_WK / dim_WK, dim_WK)
   actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWK / dim_XWK, dim_XWK)
   estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
+  
   if verbose:
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WK = ", pp_dim_WK, ", actual_pp_dim_XWK = ", actual_pp_dim_XWK, ", estimate_pp_dim_XWK = ", estimate_pp_dim_XWK)
     print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
@@ -1808,6 +2070,7 @@ def attention_experiment_new(N : int,
   estimate_pp_dim_XWV = dim_XWV * estimate_product_nu_over_d(pp_dim_X / dim_X, d, pp_dim_WV / dim_WV, dim_WV)
   actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_XWV / dim_XWV, dim_XWV)
   estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
+  
   if verbose:
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WV = ", pp_dim_WV, ", actual_pp_dim_XWV = ", actual_pp_dim_XWV, ", estimate_pp_dim_XWV = ", estimate_pp_dim_XWV)
     print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
@@ -1818,6 +2081,7 @@ def attention_experiment_new(N : int,
   estimate_pp_dim_QKT = dim_QKT * estimate_product_nu_over_d(actual_pp_dim_XWQ / dim_QKT, dim_QKT, actual_pp_dim_XWK / dim_XWK, dim_XWK)
   actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_QKT / dim_QKT, dim_QKT)
   estimate_alpha_QKT = estimate_product_alpha(implied_alpha_Q, dim_WQ, implied_alpha_K, dim_WK)
+  
   if verbose:
     print("pp_dim_WQ = ", pp_dim_WQ, ", pp_dim_WK = ", pp_dim_WK, "actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", estimate_pp_dim_QKT = ", estimate_pp_dim_QKT)
     print("alpha_Q = ", alpha_Q, ", alpha_K = ", alpha_K, ", actual_alpha_QKT = ", actual_alpha_QKT, "estimate_alpha_QKT = ", estimate_alpha_QKT)
@@ -1826,6 +2090,7 @@ def attention_experiment_new(N : int,
   dim_QKTrescaled = QKTrescaled.shape[1]
   actual_pp_dim_QKTrescaled = calculate_PatnaikPearson_dim(QKTrescaled)
   actual_alpha_QKTrescaled = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_QKTrescaled / dim_QKTrescaled, dim_QKTrescaled)
+  
   if verbose:
     print("actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
     print("actual_alpha_QKT = ", actual_alpha_QKT, ",actual_alpha_QKTrescaled = ", actual_alpha_QKTrescaled)
@@ -1835,6 +2100,7 @@ def attention_experiment_new(N : int,
   actual_pp_dim_AttnQK = calculate_PatnaikPearson_dim(AttnQK)
   actual_alpha_AttnQK = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_AttnQK / dim_AttnQK, dim_AttnQK)
   estimate_alpha_AttnQK = calculate_softmax_alpha(actual_alpha_QKTrescaled)
+  
   if verbose:
     print("sanity check : N = ", N, ", AttnQK.sum() = ", AttnQK.sum())
     print("actual_pp_dim_AttnQK = ", actual_pp_dim_AttnQK, ", actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
@@ -1859,8 +2125,15 @@ def attention_experiment_new(N : int,
   if verbose:
     print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV, ", estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
     print("actual_pp_dim_AttnQKV = ", actual_pp_dim_AttnQKV, ", estimate_pp_dim_AttnQKV = ", estimate_pp_dim_AttnQKV)
+    
+  results_dict = {
+    "actual_pp_dim_AttnQKV" : actual_pp_dim_AttnQKV, 
+    "estimate_pp_dim_AttnQKV" :  estimate_pp_dim_AttnQKV,
+    "actual_alpha_AttnQKV" : actual_alpha_AttnQKV,
+    "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV
+  }
 
-  return actual_pp_dim_AttnQKV, estimate_pp_dim_AttnQKV, actual_alpha_AttnQKV, estimate_alpha_AttnQKV
+  return results_dict
 
 def attention_experiment_old(N : int, 
                          d : int, 
@@ -1870,6 +2143,8 @@ def attention_experiment_old(N : int,
                          alpha_V : float,
                          verbose : bool = False
                          ) -> tuple:
+                             
+  # ** TO DO : deprecate
 
   # N : number of datapoints (batch size)
   # d : ambient (model) dimension
@@ -1883,47 +2158,47 @@ def attention_experiment_old(N : int,
   WK = generate_square_weight_matrix(d, alpha_K)
   WV = generate_square_weight_matrix(d, alpha_V)
 
-  nuX = calculate_PatnaikPearson_dim(X)
-  nuWQ = calculate_PatnaikPearson_dim(WQ)
-  nuWK = calculate_PatnaikPearson_dim(WK)
-  nuWV = calculate_PatnaikPearson_dim(WV)
+  nu_X = calculate_PatnaikPearson_dim(X)
+  nu_WQ = calculate_PatnaikPearson_dim(WQ)
+  nu_WK = calculate_PatnaikPearson_dim(WK)
+  nu_WV = calculate_PatnaikPearson_dim(WV)
 
-  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nuX / d, d)
-  implied_alpha_Q = calculate_alpha_given_nu_over_d_and_d(nuWQ / d, d)
-  implied_alpha_K = calculate_alpha_given_nu_over_d_and_d(nuWK / d, d)
-  implied_alpha_V = calculate_alpha_given_nu_over_d_and_d(nuWV / d, d)
+  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_X / d, d)
+  implied_alpha_Q = calculate_alpha_given_nu_over_d_and_d(nu_WQ / d, d)
+  implied_alpha_K = calculate_alpha_given_nu_over_d_and_d(nu_WK / d, d)
+  implied_alpha_V = calculate_alpha_given_nu_over_d_and_d(nu_WV / d, d)
 
   if verbose:
-    print("alpha_X = ", alpha_X, ", nuX = ", nuX, ", implied_alpha_X = ", implied_alpha_X)
-    print("alpha_Q = ", alpha_Q, ", nuWQ = ", nuWQ, ", implied_alpha_Q = ", implied_alpha_Q)
-    print("alpha_K = ", alpha_K, ", nuWK = ", nuWK, ", implied_alpha_K = ", implied_alpha_K)
-    print("alpha_V = ", alpha_V, ", nuWV = ", nuWV, ", implied_alpha_V = ", implied_alpha_V)
+    print("alpha_X = ", alpha_X, ", nu_X = ", nu_X, ", implied_alpha_X = ", implied_alpha_X)
+    print("alpha_Q = ", alpha_Q, ", nu_WQ = ", nu_WQ, ", implied_alpha_Q = ", implied_alpha_Q)
+    print("alpha_K = ", alpha_K, ", nu_WK = ", nu_WK, ", implied_alpha_K = ", implied_alpha_K)
+    print("alpha_V = ", alpha_V, ", nu_WV = ", nu_WV, ", implied_alpha_V = ", implied_alpha_V)
 
   XWQ = X @ WQ
   actual_nu_XWQ = calculate_PatnaikPearson_dim(XWQ)
-  estimate_nu_XWQ = d * estimate_product_nu_over_d(nuX / d, d, nuWQ / d, d)
+  estimate_nu_XWQ = d * estimate_product_nu_over_d(nu_X / d, d, nu_WQ / d, d)
   actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWQ / d, d)
   estimate_alpha_XWQ = estimate_product_alpha(alpha_X, d, alpha_Q, d)
   if verbose:
-    print("nuX = ", nuX, ", nuWQ = ", nuWQ, ", actual_nu_XWQ = ", actual_nu_XWQ, ", estimate_nu_XWQ = ", estimate_nu_XWQ)
+    print("nu_X = ", nu_X, ", nu_WQ = ", nu_WQ, ", actual_nu_XWQ = ", actual_nu_XWQ, ", estimate_nu_XWQ = ", estimate_nu_XWQ)
     print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
 
   XWK = X @ WK
   actual_nu_XWK = calculate_PatnaikPearson_dim(XWK)
-  estimate_nu_XWK = d * estimate_product_nu_over_d(nuX / d, d, nuWK / d, d)
+  estimate_nu_XWK = d * estimate_product_nu_over_d(nu_X / d, d, nu_WK / d, d)
   actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWK / d, d)
   estimate_alpha_XWK = estimate_product_alpha(alpha_X, d, alpha_K, d)
   if verbose:
-    print("nuX = ", nuX, ", nuWK = ", nuWK, ", actual_nu_XWK = ", actual_nu_XWK, ", estimate_nu_XWK = ", estimate_nu_XWK)
+    print("nu_X = ", nu_X, ", nu_WK = ", nu_WK, ", actual_nu_XWK = ", actual_nu_XWK, ", estimate_nu_XWK = ", estimate_nu_XWK)
     print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
 
   XWV = X @ WV
   actual_nu_XWV = calculate_PatnaikPearson_dim(XWV)
-  estimate_nu_XWV = d * estimate_product_nu_over_d(nuX / d, d, nuWV / d, d)
+  estimate_nu_XWV = d * estimate_product_nu_over_d(nu_X / d, d, nu_WV / d, d)
   actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_nu_XWV / d, d)
   estimate_alpha_XWV = estimate_product_alpha(alpha_X, d, alpha_V, d)
   if verbose:
-    print("nuX = ", nuX, ", nuWV = ", nuWV, ", actual_nu_XWV = ", actual_nu_XWV, ", estimate_nu_XWV = ", estimate_nu_XWV)
+    print("nu_X = ", nu_X, ", nu_WV = ", nu_WV, ", actual_nu_XWV = ", actual_nu_XWV, ", estimate_nu_XWV = ", estimate_nu_XWV)
     print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
 
   QKT = XWQ @ XWK.T
@@ -1932,7 +2207,7 @@ def attention_experiment_old(N : int,
   actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_nu_QKT / d, d)
   estimate_alpha_QKT = estimate_product_alpha(alpha_Q, d, alpha_K, d)
   if verbose: 
-    print("nuWQ = ", nuWQ, ", nuWK = ", nuWK, "actual_nu_QKT = ", actual_nu_QKT, ", estimate_nu_QKT = ", estimate_nu_QKT)
+    print("nu_WQ = ", nu_WQ, ", nu_WK = ", nu_WK, "actual_nu_QKT = ", actual_nu_QKT, ", estimate_nu_QKT = ", estimate_nu_QKT)
     print("alpha_Q = ", alpha_Q, ", alpha_K = ", alpha_K, ", actual_alpha_QKT = ", actual_alpha_QKT, "estimate_alpha_QKT = ", estimate_alpha_QKT)
 
   QKTrescaled = QKT / np.sqrt(d)
@@ -1969,63 +2244,150 @@ def attention_experiment_old(N : int,
   if verbose:
     print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV, ", estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
     print("actual_nu_AttnQKV = ", actual_nu_AttnQKV, ", estimate_nu_AttnQKV = ", estimate_nu_AttnQKV)
+    
+  results_dict = {
+    "actual_nu_AttnQKV" :  actual_nu_AttnQKV,
+    "estimate_nu_AttnQKV" :  estimate_nu_AttnQKV,
+    "actual_alpha_AttnQKV" :  actual_alpha_AttnQKV,
+    "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV
+  }
 
-  return actual_nu_AttnQKV, estimate_nu_AttnQKV, actual_alpha_AttnQKV, estimate_alpha_AttnQKV
+  return results_dict
   
 
-def calculate_nuSigma_for_fixed_alpha_as_d_goes_to_infinity(
+def calculate_nu_Sigma_for_fixed_alpha_as_d_goes_to_infinity(
     alpha : float,
     num_iterations : int = 9
     ) -> tuple:
+        
+  # ** TO DO : adapt to GPU?
 
   d_vals = []
-  nuSigma_vals = []
-  nuSigma_over_d_vals = []
-  nuSigmaSquared_vals = []
-  nuSigmaSquared_over_d_vals = []
+  nu_Sigma_vals = []
+  nu_Sigma_over_d_vals = []
+  nu_SigmaSquared_vals = []
+  nu_SigmaSquared_over_d_vals = []
   initial_d = 1
   scale_factor = 10
   
   d = initial_d
   for i in range(num_iterations):
-    nuSigma, nuSigmaSquared = calculate_nuSigma_nuSigmaSquared(d, alpha)
+    nu_Sigma, nu_SigmaSquared = calculate_nu_Sigma_nu_SigmaSquared(d, alpha)
     d_vals.append(d)
-    nuSigma_vals.append(nuSigma)
-    nuSigma_over_d_vals.append(nuSigma / d)
-    nuSigmaSquared_vals.append(nuSigmaSquared)
-    nuSigmaSquared_over_d_vals.append(nuSigmaSquared / d)
-    print(alpha, d, nuSigma, nuSigma / d, nuSigmaSquared, nuSigmaSquared / d)
+    nu_Sigma_vals.append(nu_Sigma)
+    nu_Sigma_over_d_vals.append(nu_Sigma / d)
+    nu_SigmaSquared_vals.append(nu_SigmaSquared)
+    nu_SigmaSquared_over_d_vals.append(nu_SigmaSquared / d)
+    print(alpha, d, nu_Sigma, nu_Sigma / d, nu_SigmaSquared, nu_SigmaSquared / d)
     d = scale_factor * d
+    
+    results_dict = {
+        "d_vals" :  d_vals,
+        "nu_Sigma_vals" : nu_Sigma_vals, 
+        "nu_Sigma_over_d_vals" : nu_Sigma_over_d_vals, 
+        "nu_SigmaSquared_vals" : nu_SigmaSquared_vals, 
+        "nu_SigmaSquared_over_d_vals" : nu_SigmaSquared_over_d_vals
+    }
 
-  return d_vals, nuSigma_vals, nuSigma_over_d_vals, nuSigmaSquared_vals, nuSigmaSquared_over_d_vals
+    return results_dict
   
-def calculate_nuSigma_nuSigmaSquared(
+def calculate_nu_Sigma_nu_SigmaSquared(
                         d : int,
                         alpha : float) -> tuple:
+                            
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?                             
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
-  nuSigma = calculate_nu(these_sigmas)
+  nu_Sigma = calculate_nu(these_sigmas)
 
   these_sigmas_squared = these_sigmas ** 2
-  nuSigmaSquared = calculate_nu(these_sigmas_squared)
+  nu_SigmaSquared = calculate_nu(these_sigmas_squared)
 
-  return nuSigma, nuSigmaSquared
+  return nu_Sigma, nu_SigmaSquared
   
-def calculate_nuW_nuWTW(N : int,
+def calculate_nu_W_nu_WTW(N : int,
                         d : int,
-                        alpha : float) -> tuple:
+                        alpha : float,
+                        uniform_draws : bool = False,
+                        verbose : bool = False,
+                        force_cpu : bool = False
+                        ) -> dict:
+                            
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?  
+
+  these_sigmas = generate_pareto_draws(d,alpha,uniform_draws)
+
+  #these_sigmas = np.zeros(d)
+  #for i in range(1,d+1): # 1 <= i <= d
+  #  this_Fx = np.random.uniform(0,1)
+  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
+  #  these_sigmas[i-1] = this_x
+
+  nu_Sigma = calculate_nu(these_sigmas)
+
+  diag_sigmas = np.diag(these_sigmas)
+  W0 = np.random.normal(0, 1, (N, d))
+  QN = generate_orthogonal_matrix(N)
+  Qd = generate_orthogonal_matrix(d)
+  
+  nu_W = 0.0 
+  twonn_dim_W = 0.0
+  nu_WTW = 0.0 
+  twonn_dim_WTW = 0.0
+  
+  if use_gpu and not force_cpu:
+    print(" ** calculate_nu_W_nu_WTW : using GPU **")
+    cp_W1 = cp.matmul(cp.array(W0), cp.array(diag_sigmas))
+    cp_W = cp.matmul(cp.matmul(cp.array(QN),cp_W1), cp.array(Qd))
+    #W = cp.asnumpy(cp_W)
+    nu_W, twonn_dim_W = calculate_nu_twonn_dim(cp.asnumpy(cp_W))
+    cp_WTW = cp.matmul(cp_W.T, cp_W)
+    nu_WTW, twonn_dim_WTW = calculate_nu_twonn_dim(cp.asnumpy(cp_WTW))
+  else:
+    print(" ** calculate_nu_W_nu_WTW : using CPU **")
+    W1 = W0 @ diag_sigmas
+    #QN = generate_orthogonal_matrix(N)
+    #Qd = generate_orthogonal_matrix(d)
+    W = QN @ W1 @ Qd
+    nu_W, twonn_dim_W = calculate_nu_twonn_dim(W)
+    WTW = W.T @ W
+    nu_WTW, twonn_dim_WTW = calculate_nu_twonn_dim(WTW)
+
+  results_dict = { 
+    "nu_Sigma" : nu_Sigma,  
+    "nu_W" : nu_W, 
+    "nu_WTW" : nu_WTW,
+    "twonn_dim_W" :  twonn_dim_W,
+    "twonn_dim_WTW" : twonn_dim_WTW
+    }
+    
+  return results_dict
+  
+def calculate_nu_W_nu_WTW_old(N : int,
+                        d : int,
+                        alpha : float,
+                        uniform_draws : bool =False) -> dict:
+                            
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?                         
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha))
+    this_Fx = 0.0
+    if uniform_draws:
+        this_Fx = i / (d+1)
+    else:
+        this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
     these_sigmas[i-1] = this_x
 
-  nuSigma = calculate_nu(these_sigmas)
+  nu_Sigma = calculate_nu(these_sigmas)
 
   diag_sigmas = np.diag(these_sigmas)
   W0 = np.random.normal(0, 1, (N, d))
@@ -2036,45 +2398,88 @@ def calculate_nuW_nuWTW(N : int,
 
   W = QN @ W1 @ Qd
 
-  nuW, int_dimW = calculate_nu_int_dim(W)
+  nu_W, twonn_dim_W = calculate_nu_twonn_dim(W)
 
   WTW = W.T @ W
-  nuWTW, int_dimWTW = calculate_nu_int_dim(WTW)
+  nu_WTW, twonn_dim_WTW = calculate_nu_twonn_dim(WTW)
 
-  return nuSigma, nuW, nuWTW, int_dimW, int_dimWTW
+  results_dict = { 
+    "nu_Sigma" : nu_Sigma,  
+    "nu_W" : nu_W, 
+    "nu_WTW" : nu_WTW,
+    "twonn_dim_W" :  twonn_dim_W,
+    "twonn_dim_WTW" : twonn_dim_WTW
+    }
+    
+  return results_dict
+  
+def generate_pareto_draws(d : int, alpha : float, uniform_draws : bool = False) -> np.ndarray:
+    
+    """
+    generate d draws from a Pareto distribution with tail exponent alpha
+    uniform_draws = True : draw these at uniform cumulants of the CDF
+    uniform_draws = False : draw these randomly from cumulants of the CDF
+    """
+    
+    #these_sigmas = np.zeros(d)
+    
+    these_Fx = np.zeros(d)
+    if uniform_draws:
+        these_Fx = np.arange(1,d+1,1) / (d+1)
+        #this_Fx = i / (d+1)
+    else:
+        these_Fx = np.random.uniform(0,1,d)
+        
+    #print("these_Fx.shape = ", these_Fx.shape)
+    return this_vec_inv_pareto_cdf(alpha, these_Fx)
   
 def calculate_product_nu(d : int,
                          alpha_1 : float,
                          alpha_2 : float
-                         ) -> tuple:
+                         ) -> dict:
+                             
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?
 
   these_sigmas_1 = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha_1))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx)) ** (1.0/alpha_1)
     these_sigmas_1[i-1] = this_x
-  nuSigma1 = calculate_nu(these_sigmas_1)
+  nu_Sigma1 = calculate_nu(these_sigmas_1)
 
   these_sigmas_2 = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = i / (d+1)
-    this_x = (1 - this_Fx) ** (1.0/(1.0 - alpha_2))
+    this_Fx = np.random.uniform(0,1)
+    this_x = (1.0/(1 - this_Fx)) ** (1.0/alpha_2)
     these_sigmas_2[i-1] = this_x
-  nuSigma2 = calculate_nu(these_sigmas_2)
+  nu_Sigma2 = calculate_nu(these_sigmas_2)
 
   Q11 = generate_orthogonal_matrix(d)
   Q12 = generate_orthogonal_matrix(d)
   Q21 = generate_orthogonal_matrix(d)
   Q22 = generate_orthogonal_matrix(d)
+  
   W1 = Q11 @ np.diag(these_sigmas_1) @ Q12
   W2 = Q21 @ np.diag(these_sigmas_2) @ Q22
-  nuW1, int_dimW1 = calculate_nu_int_dim(W1)
-  nuW2, int_dimW2 = calculate_nu_int_dim(W2)
+  nu_W1, twonn_dim_W1 = calculate_nu_twonn_dim(W1)
+  nu_W2, twonn_dim_W2 = calculate_nu_twonn_dim(W2)
 
   W1W2 = W1 @ W2
-  nuW1W2, int_dimW1W2 = calculate_nu_int_dim(W1W2)
+  nu_W1W2, twonn_dim_W1W2 = calculate_nu_twonn_dim(W1W2)
 
-  return nuSigma1, nuSigma2, nuW1, nuW2, nuW1W2, int_dimW1, int_dimW2, int_dimW1W2
+  results_dict = {
+    "nu_Sigma1" :  nu_Sigma1,
+    "nu_Sigma2" : nu_Sigma2,
+    "nu_W1" : nu_W1, 
+    "nu_W2" : nu_W2, 
+    "nu_W1W2" :  nu_W1W2,
+    "twonn_dim_W1" :  twonn_dim_W1,
+    "twonn_dim_W2" :  twonn_dim_W2,
+    "twonn_dim_W1W2" : twonn_dim_W1W2
+    }
+    
+  return results_dict
   
 def generate_random_data_of_given_intrinsic_dim(embedding_dim : int,
                                                 intrinsic_dim : int,
@@ -2130,6 +2535,7 @@ def generate_N_points_in_k_dimensional_subspace_in_R_d(
 	d : dimension of full space
 	k : desired dimension of data manifold
 	"""
+    # ** TO DO : adapt to GPU?
 
 	is_cuboid = False
 	is_ellipsoid = False
@@ -2333,9 +2739,9 @@ def run_experiment_one( N : int,
   if verbose:
     print("nu = ", nu)
 
-  int_dim = two_nn_intrinsic_dimension(X, plot_fit=verbose)
+  twonn_dim = twonn_intrinsic_dimension(X, plot_fit=verbose)
 
-  return nu, int_dim
+  return nu, twonn_dim
   
 def generate_N_points_on_k_sphere_in_R_d(N : int,
                                          d : int,
@@ -2354,6 +2760,9 @@ def generate_N_points_on_k_sphere_in_R_d(N : int,
   fifth, we add a displacement vector, to shift the points away from the origin
   sixth, we return the points and the displacement vector
   """
+  
+  # ** TO DO : adapt to GPU?
+  
   X = np.random.randn(N, d)
   Pkplusone = np.zeros((d,d))
   for i in range(0,k+1):
@@ -2400,6 +2809,9 @@ def generate_N_points_in_unit_k_ball_in_R_d(N : int,
   fifth, we add a displacement vector, to shift the points away from the origin
   sixth, we return the points and the displacement vector
   """
+  
+  # ** TO DO : adapt to GPU?
+  
   X = np.random.randn(N, d)
   Pk = np.zeros((d,d))
   for i in range(0,k):
@@ -2453,6 +2865,9 @@ def generate_N_points_on_surface_of_k_ellipsoid_in_R_d(N : int,
   fifth, we add a displacement vector, to shift the points away from the origin
   sixth, we return the points and the displacement vector
   """
+  
+  # ** TO DO : adapt to GPU?
+  
   X = np.random.randn(N, d)
   Pkplusone = np.zeros((d,d))
   for i in range(0,k+1):
@@ -2496,6 +2911,8 @@ def generate_N_points_in_solid_k_cube_in_R_d(N : int,
                                           no_orthogonal_multiplication : bool = False,
                                           eccentricity : float = 1.0
                                           ) -> tuple[np.ndarray, np.ndarray]:
+                                              
+    # ** TO DO : adapt to GPU?
 
     this_solid_cube = True
     kminusone = k-1
@@ -2537,6 +2954,9 @@ def generate_N_points_on_k_dim_cubical_surface_in_R_d(
   fifth, we add a displacement vector, to shift the points away from the origin
   sixth, we return the points and the displacement vector
   """
+  
+  # ** TO DO : adapt to GPU?
+  
   # one : choose N random points
   X = np.random.uniform(low = -1, high = +1, size = (N, d))
 
@@ -2586,11 +3006,13 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
                                           verbose : bool = False
                                           ) -> float:
   # given nu / d and d, find alpha
+  # uses new definition of alpha 
 
   eps = 1e-9
 
   # initial estimates
-  alpha_0 = 2 + (1.0 - nu_over_d)**0.5
+  alpha_0 = 1.0 + (1.0 - nu_over_d)**0.5 # NEW
+  #alpha_0 = 2.0 + (1.0 - nu_over_d)**0.5 # OLD
   _, nu_over_d_0 = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_0, d)
 
   alpha_i = alpha_0
@@ -2636,6 +3058,8 @@ def calculate_alpha_given_nu_over_d_and_d_old(nu_over_d : float,
                                           d : int,
                                           verbose : bool = False
                                           ) -> float:
+                                              
+  # ** TO DO : deprecate                                            
                                                
   # old and spare - 02/05/2026 : I compared old and new versions, get identical results
   # given nu / d and d, find alpha
@@ -2704,6 +3128,8 @@ def calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha : float, d : int) ->
   return calculate_nu_alpha_d_analytic(alpha, d, warning=False)
 
 def calculate_nu_alpha_d_analytic(alpha : float, d : int, warning=True) -> tuple:
+  # uses correct alpha 
+  # ** TO DO : deprecate this
 
   if warning:
     print("** warning: call calculate_nu_and_nu_over_d_given_alpha_d_analytic rather than calculate_nu_alpha_d_analytic **")
@@ -2714,32 +3140,33 @@ def calculate_nu_alpha_d_analytic(alpha : float, d : int, warning=True) -> tuple
   default_nu = 0.0
   default_nu_over_d = 0.0
 
-  s = 1.0 / (alpha - 1.0)
+  #s = 1.0 / (alpha - 1.0)
+  s = 1.0 / alpha
 
-  if alpha < 1.0:
+  if alpha < 0.0:
     return default_nu, default_nu_over_d
 
-  if abs(alpha - 3.0) < eps:
+  if abs(alpha - 2.0) < eps:
     nu_over_d = 4.0 / math.log(d)
     nu = nu_over_d * d
     return nu, nu_over_d
 
-  if abs(alpha - 2.0) < eps:
+  if abs(alpha - 1.0) < eps:
     nu = (math.log(d))**2
     nu_over_d = nu / d
     return nu, nu_over_d
 
-  if alpha > 3.0:
+  if alpha > 2.0:
     nu_over_d = C_alpha(alpha) * ((1.0 - d**(s - 1.0))**2) / (1.0 - d**(2.0*s - 1.0))
     nu = nu_over_d * d
     return nu, nu_over_d
 
-  if 3.0 > alpha and alpha > 2.0:
+  if 2.0 > alpha and alpha > 1.0:
     nu_over_d = -1.0 * C_alpha(alpha) * (d**(1.0 - 2.0 * s)) * ((1 - d**(s - 1.0))**2) / (1.0 - d**(1.0 - 2.0 * s))
     nu = nu_over_d * d
     return nu, nu_over_d
 
-  if 2.0 > alpha:
+  if 1.0 > alpha:
     nu = -1.0 * C_alpha(alpha) * ((1.0 - d**(1.0 - s))**2) / (1.0 - d**(1.0 - 2.0*s))
     nu_over_d = nu / d
     return nu, nu_over_d
@@ -2755,12 +3182,18 @@ def get_nu_over_d_vals_from_alpha_vals_d(alpha_vals : np.ndarray, d : int) -> np
   
 def calculate_conjectured_limiting_value_nu_over_d(alpha : float) -> float:
   # conjectured limiting value as d -> infinity
-  if alpha <= 3.0:
+  # uses correct alpha 
+  if alpha <= 2.0:
     return 0.0
   else:
     return C_alpha(alpha)
 
 def C_alpha(alpha : float) -> float:
+  # uses correct alpha  
+  return ((alpha - 2.0) * alpha) / (alpha - 1.0)**2
+  
+def C_alpha_old(alpha : float) -> float:
+  # ** TO DO : OLD DEFINITION
   return ((alpha - 3.0) * (alpha - 1.0)) / (alpha - 2.0)**2
   
 def smooth_this_array(input_array : np.ndarray,
