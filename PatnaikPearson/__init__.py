@@ -32,6 +32,7 @@ from .helper import this_tanh
 from .helper import gelu_exact
 from .helper import gelu_approx
 from .helper import calculate_nu_alpha_d
+from .helper import calculate_nu_alpha_d_old
 from .helper import row_wise_softmax
 from .helper import softmax
 from .helper import generate_square_weight_matrix
