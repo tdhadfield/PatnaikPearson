@@ -3396,3 +3396,46 @@ def product_alpha_experiment(N : int,
   results_dict["nu_over_d_XW_estimate"] = nu_over_d_XW_estimate
 
   return results_dict
+  
+
+def relu_experiment(N : int,
+                    d : int,
+                    alpha_X : float,
+                    verbose : bool = False
+                    ) -> dict:
+
+  X = generate_data_manifold(N, d, alpha_X)
+  dim_X = X.shape[1]
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  nu_over_d_X = pp_dim_X / dim_X
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+
+  if verbose:
+    print("dim_X = ", dim_X)
+    print("pp_dim_X = ", pp_dim_X)
+    print("nu_over_d_X = ", nu_over_d_X)
+    print("actual_alpha_X = ", actual_alpha_X)
+
+  reluX = this_vec_relu(X)
+  #print(reluX[0:n,0:n])
+  dim_reluX = reluX.shape[1]
+  pp_dim_reluX = calculate_PatnaikPearson_dim(reluX)
+  nu_over_d_reluX = pp_dim_reluX / dim_reluX
+  actual_alpha_reluX = calculate_alpha_given_nu_over_d_and_d(nu_over_d_reluX, dim_reluX)
+
+  if verbose:
+    print("dim_reluX = ", dim_reluX)
+    print("pp_dim_reluX = ", pp_dim_reluX)
+    print("nu_over_d_reluX = ", nu_over_d_reluX)
+    print("actual_alpha_reluX = ", actual_alpha_reluX)
+
+  results_dict = {
+	"actual_alpha_X" : actual_alpha_X,
+	"actual_alpha_reluX" : actual_alpha_reluX,
+	"pp_dim_X" : pp_dim_X, 
+	"pp_dim_reluX" : pp_dim_reluX,
+	"nu_over_d_X" : nu_over_d_X, 
+	"nu_over_d_reluX" : nu_over_d_reluX
+	}
+
+  return results_dict
