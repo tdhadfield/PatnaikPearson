@@ -936,11 +936,11 @@ def display_stats(this_array, calc_norm=True):
     print("sum :", np.sum(this_array))
     print("mean :", np.mean(this_array))
     print("std :", np.std(this_array))
-    if calc_norm:
+    if calc_norm and len(this_array.shape) == 1:
         print("norm :", math.sqrt(np.dot(this_array, this_array)))
     return
 
-def plot_histogram(this_array, rescale_factor=1.0, x_label = "x_label", y_label = "y_label", verbose=False):
+def plot_histogram(this_array, rescale_factor=1.0, x_label = "x_label", y_label = "y_label", title = "this is the title", verbose=False):
     custom_bins = []
     this_min = np.min(this_array)
     this_max = np.max(this_array)
@@ -959,9 +959,9 @@ def plot_histogram(this_array, rescale_factor=1.0, x_label = "x_label", y_label 
         print("Histogram counts:", hist)
 
     plt.hist(this_array, bins=custom_bins, edgecolor='black')
-    #plt.title("embedding_norms")
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    plt.title(title)
     plt.show()
     
 # apply log to an array by vectorisation
@@ -1245,7 +1245,12 @@ def softmax(input_array : np.ndarray,
     return e_input_array / e_input_array.sum()
     
 def generate_square_weight_matrix(d : int,
-                                  alpha : float
+                                  alpha : float,
+                                  uniform_draws : bool = False,
+                                  use_pareto : bool = True,
+                                  use_uniform : bool = False,
+                                  use_cauchy : bool = False,
+                                  verbose : bool = False
                                   ) -> np.ndarray:
 
   # d is the dimension of the square matrix, which will be d * d
@@ -1253,12 +1258,30 @@ def generate_square_weight_matrix(d : int,
   
   # uses correct alpha
   # ** TO DO : adapt to GPU?
-
+  
   these_sigmas = np.zeros(d)
-  for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = np.random.uniform(0,1)
-    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-    these_sigmas[i-1] = this_x
+  if use_pareto:
+    these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
+    if verbose:
+        print("using pareto")
+        print(these_sigmas[0:5])
+  elif use_uniform:
+    if verbose:
+        print("using uniform")
+    these_sigmas = np.random.uniform(0,1,d)
+  elif use_cauchy:
+    if verbose:
+        print("using cauchy")
+    these_sigmas = np.random.standard_cauchy(d)
+  else:
+    print("*** error : need to set at least one of use_pareto, use_uniform, use_cauchy to True ***")
+    
+  print("these_sigmas[0:5] = ",these_sigmas[0:5])    
+  #these_sigmas = np.zeros(d)
+  #for i in range(1,d+1): # 1 <= i <= d
+  #  this_Fx = np.random.uniform(0,1)
+  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
+  #  these_sigmas[i-1] = this_x
     
   if use_gpu:
     print(" ** generate_square_weight_matrix: using GPU **")
@@ -1278,6 +1301,10 @@ def generate_square_weight_matrix(d : int,
 def generate_data_manifold(N : int,
                            d : int,
                            alpha : float,
+                           uniform_draws : bool = False,
+                           use_pareto : bool = True,
+                           use_uniform : bool = False,
+                           use_cauchy : bool = False,
                            verbose : bool = False
                            ) -> np.ndarray:
 
@@ -1292,10 +1319,27 @@ def generate_data_manifold(N : int,
   X0 = np.random.randn(N, d)
 
   these_sigmas = np.zeros(d)
-  for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = np.random.uniform(0,1)
-    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-    these_sigmas[i-1] = this_x
+  if use_pareto:
+    these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
+    if verbose:
+        print("using pareto")
+        print(these_sigmas[0:5])
+  elif use_uniform:
+    these_sigmas = np.random.uniform(0,1,d)
+    if verbose:
+        print("using uniform")
+        print(these_sigmas[0:5])
+  elif use_cauchy:
+    these_sigmas = np.random.standard_cauchy(d)
+    if verbose:
+        print("using cauchy")
+        print(these_sigmas[0:5])
+  else:
+    print("*** error : need to set at least one of use_pareto, use_uniform, use_cauchy to True ***")
+  #for i in range(1,d+1): # 1 <= i <= d
+  #  this_Fx = np.random.uniform(0,1)
+  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
+  #  these_sigmas[i-1] = this_x
 
   Xdiag = np.diag(these_sigmas)
   
@@ -1406,12 +1450,11 @@ def calculate_stable_rank(these_lambdas : np.array) -> float:
   
 def generate_orthogonal_matrix(dim : int) -> np.ndarray:
   """
-  generate an orthogonal matrix of dimension dim
+  generate an orthogonal matrix of dimension dim, using the QR decomposition. 
   """
   
   H = np.random.randn(dim, dim)
   Q, R = np.linalg.qr(H)
-  #Q, R = qr(H)
   Q *= np.sign(np.diag(R)) # Ensure positive diagonal
   return Q
   
@@ -1548,6 +1591,8 @@ def calculate_PatnaikPearson_dim_gpu(
         
   if verbose:
       print("reached calculate_PatnaikPearson_dim_gpu")
+      print("input_data.shape = ",input_data.shape)
+      display_stats(input_data)
 
   X = cp.array(input_data)
   this_N = X.shape[0]
@@ -2101,8 +2146,12 @@ def get_alpha_vals_softmax_alpha_vals() -> tuple:
   alpha_vals =  [1.292893, 1.292893, 1.292893, 1.292894, 1.292897, 1.292911, 1.292955, 1.293055, 1.293245, 1.293557, 1.294038, 1.294684, 1.295543, 1.296625, 1.29794, 1.299504, 1.301304, 1.303359, 1.305674, 1.30818, 1.310943, 1.313959, 1.317188, 1.320625, 1.324296, 1.328177, 1.332258, 1.336529, 1.340988, 1.34566, 1.350474, 1.355493, 1.36074, 1.366138, 1.371566, 1.377244, 1.383176, 1.389214, 1.395392, 1.401758, 1.408105, 1.414957, 1.421658, 1.428517, 1.435682, 1.44288, 1.450256, 1.457864, 1.465347, 1.473098, 1.480941, 1.489303, 1.497161, 1.50557, 1.514234, 1.522268, 1.53083, 1.539429, 1.548303, 1.557392, 1.566224, 1.575139, 1.584542, 1.593386, 1.602557, 1.611905, 1.621286, 1.630603, 1.640193, 1.649601, 1.659092, 1.668721, 1.678427, 1.688029, 1.69767, 1.707359, 1.717062, 1.727011, 1.736628, 1.746348, 1.756148, 1.765976, 1.775763, 1.785947, 1.795428, 1.805268, 1.815131, 1.825009, 1.835023, 1.844704, 1.85459, 1.864619, 1.874391, 1.884239, 1.894139, 1.90406, 1.914272, 1.923841, 1.933891, 1.943743, 1.953564, 1.963465, 1.973343, 1.983339, 1.993174, 2.003159, 2.013044, 2.023106, 2.032828, 2.04332, 2.05269, 2.06262, 2.072651, 2.082727, 2.092496, 2.102354, 2.112365, 2.12214, 2.132094, 2.1424, 2.151961, 2.161999, 2.171999, 2.181854, 2.192106, 2.201747, 2.211629, 2.221516, 2.231549, 2.241479, 2.251745, 2.261446, 2.27138, 2.281283, 2.29184, 2.301444, 2.311139, 2.321141, 2.33107, 2.340925, 2.350903, 2.36081, 2.370808, 2.381072, 2.390697, 2.400742, 2.410749, 2.420992, 2.430669, 2.440715, 2.450659, 2.460663, 2.471043, 2.480436, 2.490421, 2.500754, 2.510341, 2.520477, 2.530428, 2.540407, 2.550483, 2.560484, 2.570312, 2.580127, 2.590095, 2.600188, 2.610322, 2.620473, 2.63057, 2.640249, 2.650178, 2.659955, 2.670189, 2.680027, 2.69045, 2.700059, 2.71023, 2.720053, 2.729786, 2.740007, 2.749726, 2.760061, 2.769698, 2.779888, 2.789871, 2.800134, 2.809785, 2.81996, 2.830041, 2.839753, 2.849761, 2.859562, 2.87007, 2.87968, 2.889508, 2.899799, 2.909613, 2.919539, 2.929829]
 
   smoothed_softmax_alpha_vals =  [1.292914, 1.292996, 1.293203, 1.293678, 1.294728, 1.296808, 1.300562, 1.306794, 1.316385, 1.329934, 1.347666, 1.369349, 1.394165, 1.420706, 1.447452, 1.473202, 1.496971, 1.518262, 1.537178, 1.554416, 1.570556, 1.586047, 1.601366, 1.616842, 1.632358, 1.647563, 1.662246, 1.676216, 1.689213, 1.700968, 1.711585, 1.721368, 1.730587, 1.739492, 1.74844, 1.757716, 1.767471, 1.777674, 1.788309, 1.799396, 1.810806, 1.822261, 1.833365, 1.843837, 1.853305, 1.861474, 1.868283, 1.874073, 1.879167, 1.883929, 1.888895, 1.894462, 1.900665, 1.907513, 1.915122, 1.923224, 1.931464, 1.939668, 1.947755, 1.955318, 1.962191, 1.968444, 1.974084, 1.978888, 1.982925, 1.986353, 1.989125, 1.991371, 1.993437, 1.995663, 1.998161, 2.001109, 2.004468, 2.007972, 2.011216, 2.014023, 2.01624, 2.017922, 2.01929, 2.020568, 2.021905, 2.023332, 2.024745, 2.025922, 2.026976, 2.028079, 2.029484, 2.031391, 2.034022, 2.037213, 2.040511, 2.043518, 2.045851, 2.047506, 2.0488, 2.050121, 2.051793, 2.054179, 2.057428, 2.06107, 2.064822, 2.068867, 2.073481, 2.078871, 2.085619, 2.094453, 2.10529, 2.117694, 2.130942, 2.144309, 2.156784, 2.167711, 2.176881, 2.184373, 2.190499, 2.195594, 2.200096, 2.204276, 2.208387, 2.212503, 2.216734, 2.221157, 2.225794, 2.230647, 2.23571, 2.240998, 2.246485, 2.252183, 2.258134, 2.264367, 2.270894, 2.277711, 2.284805, 2.292135, 2.299655, 2.307329, 2.315131, 2.323038, 2.331039, 2.339133, 2.347324, 2.355613, 2.364003, 2.372495, 2.381086, 2.389773, 2.398551, 2.407415, 2.416359, 2.42538, 2.434474, 2.443635, 2.452856, 2.462131, 2.471452, 2.480815, 2.490213, 2.499648, 2.509122, 2.518631, 2.528174, 2.537745, 2.547337, 2.556942, 2.566553, 2.576169, 2.585792, 2.595427, 2.605077, 2.614749, 2.624444, 2.634164, 2.643907, 2.653672, 2.663454, 2.673248, 2.683049, 2.692851, 2.702649, 2.712444, 2.722236, 2.73203, 2.741834, 2.751652, 2.761489, 2.771348, 2.781226, 2.791119, 2.80102, 2.810922, 2.820819, 2.830708, 2.840588, 2.850455, 2.860281, 2.870011, 2.879314, 2.887863, 2.895337]
+  
+  new_alpha_vals = np.array(alpha_vals) - 1.0
+  new_smoothed_softmax_alpha_vals  = np.array(smoothed_softmax_alpha_vals ) - 1.0
 
-  return alpha_vals, smoothed_softmax_alpha_vals  
+  return new_alpha_vals, new_smoothed_softmax_alpha_vals
+  #return alpha_vals, smoothed_softmax_alpha_vals  
   
 def attention_experiment_new(N : int,
                          d : int,
@@ -2379,7 +2428,7 @@ def calculate_nu_Sigma_for_fixed_alpha_as_d_goes_to_infinity(
   
   d = initial_d
   for i in range(num_iterations):
-    nu_Sigma, nu_SigmaSquared = calculate_nu_Sigma_nu_SigmaSquared(d, alpha)
+    nu_Sigma, nu_SigmaSquared = calculate_nu_Sigma_nu_SigmaSquared(d, alpha, uniform_draws = True)
     d_vals.append(d)
     nu_Sigma_vals.append(nu_Sigma)
     nu_Sigma_over_d_vals.append(nu_Sigma / d)
@@ -2400,16 +2449,18 @@ def calculate_nu_Sigma_for_fixed_alpha_as_d_goes_to_infinity(
   
 def calculate_nu_Sigma_nu_SigmaSquared(
                         d : int,
-                        alpha : float) -> tuple:
+                        alpha : float,
+                        uniform_draws : bool = False) -> tuple:
                             
   # uses correct alpha
   # ** TO DO : adapt to GPU?                             
 
-  these_sigmas = np.zeros(d)
-  for i in range(1,d+1): # 1 <= i <= d
-    this_Fx = np.random.uniform(0,1)
-    this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-    these_sigmas[i-1] = this_x
+  #these_sigmas = np.zeros(d)
+  these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
+  #for i in range(1,d+1): # 1 <= i <= d
+  #  this_Fx = np.random.uniform(0,1)
+  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
+  #  these_sigmas[i-1] = this_x
   nu_Sigma = calculate_nu(these_sigmas)
 
   these_sigmas_squared = these_sigmas ** 2
@@ -2482,7 +2533,8 @@ def calculate_nu_W_nu_WTW_old(N : int,
                         uniform_draws : bool =False) -> dict:
                             
   # uses correct alpha
-  # ** TO DO : adapt to GPU?                         
+  # ** TO DO : adapt to GPU?   
+  # ** TO DO : DEPRECATE?
 
   these_sigmas = np.zeros(d)
   for i in range(1,d+1): # 1 <= i <= d
@@ -3118,7 +3170,8 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
   eps = 1e-9
 
   # initial estimates
-  alpha_0 = 1.0 + (1.0 - nu_over_d)**0.5 # NEW
+  alpha_0 = 5.0 * nu_over_d # NEW 02/06
+  #alpha_0 = 1.0 + (1.0 - nu_over_d)**0.5 # NEW
   #alpha_0 = 2.0 + (1.0 - nu_over_d)**0.5 # OLD
   _, nu_over_d_0 = calculate_nu_and_nu_over_d_given_alpha_d_analytic(alpha_0, d)
 
@@ -3129,7 +3182,7 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
 
   stepwise_scale_factor = 0.99
   delta_alpha = 0.1
-  min_alpha_i = 1.01
+  min_alpha_i = 0.01 # was 1.01
   for i in range(0,100):
     if abs(nu_over_d_i - nu_over_d) < eps:
       return alpha_i
@@ -3156,7 +3209,7 @@ def calculate_alpha_given_nu_over_d_and_d(nu_over_d : float,
     delta_alpha = delta_alpha * stepwise_scale_factor
 
     if verbose:
-      print(i, delta_alpha, alpha_i, nu_over_d_i)
+      print(i, "delta_alpha = ", delta_alpha, ", alpha_i = ", alpha_i, ", nu_over_d_i = ", nu_over_d_i)
 
   return alpha_i
 
@@ -3438,4 +3491,49 @@ def relu_experiment(N : int,
 	"nu_over_d_reluX" : nu_over_d_reluX
 	}
 
+  return results_dict
+  
+def addition_experiment(N : int,
+                        d : int,
+                        alpha_X1 : float,
+                        alpha_X2 : float
+                        ) -> tuple:
+                            
+  """
+  generate data manifolds X1, X2, both of shape (N,d) 
+  with tail exponents alpha_X1, alpha_X2
+  add them together (elementwise) : X1 + X2
+  calculate Patnaik-Pearson dimension, nu/d and implied alpha for X1, X2 and X1 + X2
+  """
+
+  X1 = generate_data_manifold(N, d, alpha_X1)
+  dim_X1 = X1.shape[1]
+  pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
+  nu_over_d_X1 = pp_dim_X1 / dim_X1
+  actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
+
+  X2 = generate_data_manifold(N, d, alpha_X2)
+  dim_X2 = X2.shape[1]
+  pp_dim_X2 = calculate_PatnaikPearson_dim(X2)
+  nu_over_d_X2 = pp_dim_X2 / dim_X2
+  actual_alpha_X2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X2, dim_X2)
+
+  X1plusX2 = X1 + X2
+  dim_X1plusX2 = X1plusX2.shape[1]
+  pp_dim_X1plusX2 = calculate_PatnaikPearson_dim(X1plusX2)
+  nu_over_d_X1plusX2 = pp_dim_X1plusX2 / dim_X1plusX2
+  actual_alpha_X1plusX2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1plusX2, dim_X1plusX2)
+
+  results_dict = { 
+    "actual_alpha_X1" : actual_alpha_X1, 
+    "actual_alpha_X2" : actual_alpha_X2, 
+    "actual_alpha_X1plusX2" : actual_alpha_X1plusX2, 
+    "pp_dim_X1" : pp_dim_X1,
+    "pp_dim_X2" : pp_dim_X2,
+    "pp_dim_X1plusX2" : pp_dim_X1plusX2,
+    "nu_over_d_X1" : nu_over_d_X1,
+    "nu_over_d_X2" : nu_over_d_X2, 
+    "nu_over_d_X1plusX2" : nu_over_d_X1plusX2
+  }
+  
   return results_dict

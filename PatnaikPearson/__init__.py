@@ -55,6 +55,7 @@ from .helper import plot_histogram_of_values
 from .helper import estimate_product_nu_over_d
 from .helper import estimate_product_nu_over_d_base
 from .helper import estimate_product_alpha_base
+from .helper import calculate_nu_over_d_given_alpha_and_d
 from .helper import calculate_nu_over_d_given_alpha
 from .helper import calculate_alpha_given_nu_over_d
 from .helper import get_alpha_vals_nu_over_d_vals
@@ -80,6 +81,7 @@ from .helper import generate_N_points_on_k_dim_cubical_surface_in_R_d
 from .helper import calculate_alpha_given_nu_over_d_and_d
 from .helper import calculate_nu_alpha_d_analytic_array
 from .helper import calculate_nu_alpha_d_analytic
+from .helper import calculate_nu_and_nu_over_d_given_alpha_d_analytic
 from .helper import get_nu_over_d_vals_from_alpha_vals_d
 from .helper import calculate_conjectured_limiting_value_nu_over_d
 from .helper import C_alpha
@@ -87,3 +89,4 @@ from .helper import this_abs
 from .helper import this_log10
 from .helper import product_alpha_experiment
 from .helper import relu_experiment
+from .helper import addition_experiment
