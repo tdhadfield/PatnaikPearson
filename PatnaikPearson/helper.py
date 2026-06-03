@@ -1276,7 +1276,7 @@ def generate_square_weight_matrix(d : int,
   else:
     print("*** error : need to set at least one of use_pareto, use_uniform, use_cauchy to True ***")
     
-  print("these_sigmas[0:5] = ",these_sigmas[0:5])    
+  #print("these_sigmas[0:5] = ",these_sigmas[0:5])    
   #these_sigmas = np.zeros(d)
   #for i in range(1,d+1): # 1 <= i <= d
   #  this_Fx = np.random.uniform(0,1)
