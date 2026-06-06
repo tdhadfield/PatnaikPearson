@@ -7,6 +7,7 @@ import cupy as cp
 #import scikit-learn as sklearn
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import qr
+import pandas as pd
 
 np.random.seed(42)
 use_gpu = torch.cuda.is_available()
@@ -1190,10 +1191,6 @@ def calculate_nu_alpha_d(alpha : float,
   # ** TO DO : adapt to GPU?
 
   these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
-  #for i in range(1,d+1): # 1 <= i <= d
-  #  this_Fx = np.random.uniform(0,1)
-  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-  #  these_sigmas[i-1] = this_x
 
   return calculate_nu(these_sigmas)
   
@@ -1276,13 +1273,6 @@ def generate_square_weight_matrix(d : int,
   else:
     print("*** error : need to set at least one of use_pareto, use_uniform, use_cauchy to True ***")
     
-  #print("these_sigmas[0:5] = ",these_sigmas[0:5])    
-  #these_sigmas = np.zeros(d)
-  #for i in range(1,d+1): # 1 <= i <= d
-  #  this_Fx = np.random.uniform(0,1)
-  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-  #  these_sigmas[i-1] = this_x
-    
   if use_gpu:
     print(" ** generate_square_weight_matrix: using GPU **")
     Wdiag = cp.diag(these_sigmas)
@@ -1314,8 +1304,6 @@ def generate_data_manifold(N : int,
   
   # uses correct alpha
   
-  #use_gpu = torch.cuda.is_available()
-  
   X0 = np.random.randn(N, d)
 
   these_sigmas = np.zeros(d)
@@ -1336,10 +1324,6 @@ def generate_data_manifold(N : int,
         print(these_sigmas[0:5])
   else:
     print("*** error : need to set at least one of use_pareto, use_uniform, use_cauchy to True ***")
-  #for i in range(1,d+1): # 1 <= i <= d
-  #  this_Fx = np.random.uniform(0,1)
-  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-  #  these_sigmas[i-1] = this_x
 
   Xdiag = np.diag(these_sigmas)
   
@@ -1437,15 +1421,6 @@ def calculate_stable_rank(these_lambdas : np.array) -> float:
   if operator_norm_squared > eps:
     stable_rank = frobenius_norm_squared / operator_norm_squared
   return stable_rank
-  
-#def generate_orthogonal_matrix(dim : int) -> np.ndarray:
-#  """
-#  generate an orthogonal matrix of dimension dim
-#  """
-#  if use_gpu:
-#    return generate_orthogonal_matrix_gpu(dim)
-#  else:
-#    return generate_orthogonal_matrix_cpu(dim)
       
   
 def generate_orthogonal_matrix(dim : int) -> np.ndarray:
@@ -1457,18 +1432,6 @@ def generate_orthogonal_matrix(dim : int) -> np.ndarray:
   Q, R = np.linalg.qr(H)
   Q *= np.sign(np.diag(R)) # Ensure positive diagonal
   return Q
-  
-#def generate_orthogonal_matrix_gpu_doesnt_work(dim : int) -> np.ndarray:
-#  """
-#  generate an orthogonal matrix of dimension dim
-#  """
-  
-#  # ** TO DO : adapt to GPU? Need QR decomposition for cp
-  
-#  H = cp.random.randn(dim, dim)
-#  Q, R = qr(H) # this doesn't work for cp?
-#  Q *= cp.sign(cp.diag(R)) # Ensure positive diagonal
-#  return cp.asnumpy(Q)
   
 def calculate_nu_twonn_dim(
 	input_data : np.ndarray,
@@ -2453,14 +2416,9 @@ def calculate_nu_Sigma_nu_SigmaSquared(
                         uniform_draws : bool = False) -> tuple:
                             
   # uses correct alpha
-  # ** TO DO : adapt to GPU?                             
-
-  #these_sigmas = np.zeros(d)
+  # ** TO DO : adapt to GPU?  
+  
   these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
-  #for i in range(1,d+1): # 1 <= i <= d
-  #  this_Fx = np.random.uniform(0,1)
-  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-  #  these_sigmas[i-1] = this_x
   nu_Sigma = calculate_nu(these_sigmas)
 
   these_sigmas_squared = these_sigmas ** 2
@@ -2481,12 +2439,6 @@ def calculate_nu_W_nu_WTW(N : int,
 
   these_sigmas = generate_pareto_draws(d,alpha,uniform_draws)
 
-  #these_sigmas = np.zeros(d)
-  #for i in range(1,d+1): # 1 <= i <= d
-  #  this_Fx = np.random.uniform(0,1)
-  #  this_x = (1.0/(1 - this_Fx))** (1.0/alpha)
-  #  these_sigmas[i-1] = this_x
-
   nu_Sigma = calculate_nu(these_sigmas)
 
   diag_sigmas = np.diag(these_sigmas)
@@ -2503,15 +2455,12 @@ def calculate_nu_W_nu_WTW(N : int,
     print(" ** calculate_nu_W_nu_WTW : using GPU **")
     cp_W1 = cp.matmul(cp.array(W0), cp.array(diag_sigmas))
     cp_W = cp.matmul(cp.matmul(cp.array(QN),cp_W1), cp.array(Qd))
-    #W = cp.asnumpy(cp_W)
     nu_W, twonn_dim_W = calculate_nu_twonn_dim(cp.asnumpy(cp_W))
     cp_WTW = cp.matmul(cp_W.T, cp_W)
     nu_WTW, twonn_dim_WTW = calculate_nu_twonn_dim(cp.asnumpy(cp_WTW))
   else:
     print(" ** calculate_nu_W_nu_WTW : using CPU **")
     W1 = W0 @ diag_sigmas
-    #QN = generate_orthogonal_matrix(N)
-    #Qd = generate_orthogonal_matrix(d)
     W = QN @ W1 @ Qd
     nu_W, twonn_dim_W = calculate_nu_twonn_dim(W)
     WTW = W.T @ W
@@ -2579,8 +2528,6 @@ def generate_pareto_draws(d : int, alpha : float, uniform_draws : bool = False) 
     uniform_draws = True : draw these at uniform cumulants of the CDF
     uniform_draws = False : draw these randomly from cumulants of the CDF
     """
-    
-    #these_sigmas = np.zeros(d)
     
     these_Fx = np.zeros(d)
     if uniform_draws:
@@ -3537,3 +3484,345 @@ def addition_experiment(N : int,
   }
   
   return results_dict
+  
+def addition_experiment_two(N : int,
+                        d : int,
+                        alpha_X1 : float,
+                        alpha_X2 : float,
+                        pareto_uniform_draws : bool = False,
+                        force_pareto : bool = False,
+                        force_uniform : bool = False,
+                        force_cauchy : bool = False,
+                        verbose : bool = False
+                        ) -> tuple:
+                            
+  """
+  generate data manifolds X1, X2, both of shape (N,d) 
+  using either Uniform, Pareto or Cauchy distributions
+  with tail exponents alpha_X1, alpha_X2
+  add them together (elementwise) : X1 + X2
+  calculate Patnaik-Pearson dimension, nu/d and implied alpha for X1, X2 and X1 + X2
+  """
+  
+  if verbose:
+      print("force_pareto = ", force_pareto)
+      print("force_uniform = ", force_uniform)
+      print("force_cauchy = ", force_cauchy)
+      
+  uniform_draws = False
+
+  this_random = np.random.randint(0, 3)
+  use_pareto = this_random == 0
+  use_uniform = this_random == 1
+  use_cauchy = this_random == 2
+  this_alpha = np.random.uniform(0.1,5.0)
+
+  if force_pareto:
+        use_pareto = True
+        uniform_draws = pareto_uniform_draws 
+        this_alpha = alpha_X1
+        use_uniform = False
+        use_cauchy = False
+  elif force_uniform:
+        use_pareto = False
+        use_uniform = True
+        use_cauchy = False
+  elif force_cauchy:
+        use_pareto = False
+        use_uniform = False
+        use_cauchy = True
+        
+  if verbose:
+        print("X1 : use_pareto = ", use_pareto)
+        print("X1 : use_uniform = ", use_uniform)
+        print("X1 : use_cauchy = ", use_cauchy)
+        
+  X1 = generate_data_manifold(N, 
+                              d, 
+                              this_alpha, 
+                              uniform_draws,
+                              use_pareto,
+                              use_uniform,
+                              use_cauchy)
+  dim_X1 = X1.shape[1]
+  pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
+  nu_over_d_X1 = pp_dim_X1 / dim_X1
+  actual_alpha_X1 = 0.0
+  if force_pareto:
+    actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
+
+  this_random = np.random.randint(0, 3)
+  use_pareto = this_random == 0
+  use_uniform = this_random == 1
+  use_cauchy = this_random == 2
+  this_alpha = np.random.uniform(0.1,5.0)
+
+  if force_pareto:
+        use_pareto = True
+        uniform_draws = pareto_uniform_draws 
+        this_alpha = alpha_X2
+        use_uniform = False
+        use_cauchy = False
+  elif force_uniform:
+        use_pareto = False
+        use_uniform = True
+        use_cauchy = False
+  elif force_cauchy:
+        use_pareto = False
+        use_uniform = False
+        use_cauchy = True
+        
+  if verbose:
+        print("X2 : use_pareto = ", use_pareto)
+        print("X2 : use_uniform = ", use_uniform)
+        print("X2 : use_cauchy = ", use_cauchy)
+        
+  X2 = generate_data_manifold(N, 
+                              d, 
+                              this_alpha, 
+                              uniform_draws,
+                              use_pareto,
+                              use_uniform,
+                              use_cauchy)
+  dim_X2 = X2.shape[1]
+  pp_dim_X2 = calculate_PatnaikPearson_dim(X2)
+  nu_over_d_X2 = pp_dim_X2 / dim_X2
+  actual_alpha_X2 = 0.0
+  if force_pareto:
+    actual_alpha_X2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X2, dim_X2)
+
+  X1plusX2 = X1 + X2
+  dim_X1plusX2 = X1plusX2.shape[1]
+  pp_dim_X1plusX2 = calculate_PatnaikPearson_dim(X1plusX2)
+  nu_over_d_X1plusX2 = pp_dim_X1plusX2 / dim_X1plusX2
+  actual_alpha_X1plusX2 = 0.0
+  if force_pareto:
+    actual_alpha_X1plusX2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1plusX2, dim_X1plusX2)
+
+  results_dict = { 
+    "actual_alpha_X1" : actual_alpha_X1, 
+    "actual_alpha_X2" : actual_alpha_X2, 
+    "actual_alpha_X1plusX2" : actual_alpha_X1plusX2, 
+    "pp_dim_X1" : pp_dim_X1,
+    "pp_dim_X2" : pp_dim_X2,
+    "pp_dim_X1plusX2" : pp_dim_X1plusX2,
+    "nu_over_d_X1" : nu_over_d_X1,
+    "nu_over_d_X2" : nu_over_d_X2, 
+    "nu_over_d_X1plusX2" : nu_over_d_X1plusX2
+  }
+  
+  return results_dict
+  
+def analyse_embeddings(these_embeddings : np.ndarray,
+                       verbose : bool = False
+                       ):
+                           
+                     
+
+  print("these_embeddings.shape = ", these_embeddings.shape)
+  num_embeddings, embedding_dim = these_embeddings.shape
+  print("num_embeddings = ", num_embeddings)
+  embedding_norms = np.zeros(num_embeddings)
+  for i in range(num_embeddings):
+    embedding_norms[i] = math.sqrt(np.dot(these_embeddings[i],these_embeddings[i]))
+  print("raw embedding norm stats:")
+  display_stats(embedding_norms)
+
+  avg_embedding = np.mean(these_embeddings, axis=0)
+  print("norm(avg_embedding) :", math.sqrt(np.dot(avg_embedding,avg_embedding)))
+
+  # demean:
+  demeaned_embeddings = these_embeddings - avg_embedding
+  sanity_check = np.mean(demeaned_embeddings, axis=0)
+  print("sanity check - should be zero : ", np.dot(sanity_check,sanity_check))
+
+  demeaned_embedding_norms = np.zeros(num_embeddings)
+  for i in range(num_embeddings):
+    demeaned_embedding_norms[i] = math.sqrt(np.dot(demeaned_embeddings[i],demeaned_embeddings[i]))
+  print("raw demeaned_embedding norm stats:")
+  display_stats(demeaned_embedding_norms)
+
+  N = 2000
+  num_iterations = int(num_embeddings / N)
+  if verbose:
+    print("num_iterations = ", num_iterations)
+  if num_embeddings > N:
+    print("num_iterations = ", num_iterations)
+    these_indices = np.arange(num_embeddings)
+    pp_dim_initial_vals = np.zeros(num_iterations)
+    pp_dim_demeaned_vals = np.zeros(num_iterations)
+    for i in range(num_iterations):
+      sample_indices = np.random.choice(these_indices, size=N, replace=False)
+
+      sample_embeddings = these_embeddings[sample_indices,:]
+      pp_dim_initial = calculate_PatnaikPearson_dim(sample_embeddings, verbose=False)
+      print(i, "pp_dim_initial = ", pp_dim_initial)
+      pp_dim_initial_vals[i] = pp_dim_initial
+
+      sample_demeaned_embeddings = demeaned_embeddings[sample_indices,:]
+      pp_dim_demeaned = calculate_PatnaikPearson_dim(sample_demeaned_embeddings, verbose=False)
+      print(i, "pp_dim_demeaned = ", pp_dim_demeaned)
+      pp_dim_demeaned_vals[i] = pp_dim_demeaned
+
+    np_pp_dim_initial_vals = np.array(pp_dim_initial_vals)
+    print("raw initial embedding PP dim stats:")
+    print("Sample size = ", N, ", num_iterations = ", num_iterations)
+    display_stats(np_pp_dim_initial_vals)
+    np_pp_dim_demeaned_vals = np.array(pp_dim_demeaned_vals)
+
+    print("raw demeaned embedding PP dim stats:")
+    print("Sample size = ", N, ", num_iterations = ", num_iterations)
+    display_stats(np_pp_dim_demeaned_vals)
+  else:
+    pp_dim_embeddings = calculate_PatnaikPearson_dim(these_embeddings, verbose=False)
+    pp_dim_demeaned_embeddings = calculate_PatnaikPearson_dim(demeaned_embeddings, verbose=False)
+    print("pp_dim_embeddings = ", pp_dim_embeddings)
+    print("pp_dim_demeaned_embeddings = ", pp_dim_demeaned_embeddings)
+    
+def plot_per_layer_graphs(df : pd.DataFrame, 
+                          num_layers : int,
+                          this_key : str, 
+                          this_title : str, 
+                          this_image_name : str):
+
+    this_df = df.loc[df['value_type'] == this_key]
+    layer_idx_vals = np.arange(0,num_layers,1)
+    layer_mean_vals = np.zeros(num_layers)
+    layer_std_vals = np.zeros(num_layers)
+
+    for layer_idx in layer_idx_vals:
+        df_this_layer = (this_df.loc[this_df['layer_index'] == layer_idx])["values"]
+        layer_mean = df_this_layer.mean()
+        layer_std = df_this_layer.std()
+        layer_mean_vals[layer_idx] = layer_mean
+        layer_std_vals[layer_idx] = layer_std
+
+    plt.plot(layer_idx_vals, layer_mean_vals, label = "mean")
+    plt.plot(layer_idx_vals, layer_std_vals, label = "std")
+    plt.xlabel("layer id")
+    plt.legend()
+    plt.title(this_title)
+    plt.savefig(this_image_name, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+def bert_token_embedding_layerwise_pp_dim_experiment(model : 'transformers.models.bert.modeling_bert.BertModel',  
+                                                     tokenizer : 'transformers.models.bert.tokenization_bert.BertTokenizer',
+                                                     DEVICE : 'torch.device',
+                                                     N : int = 512, 
+                                                     num_iterations : int = 1
+                                                    ):
+
+    max_N = 512 # BERT context length
+    N = min(N, max_N)
+
+    valid_bert_base_token_ids = get_valid_bert_base_token_ids()
+    vocab_size = len(valid_bert_base_token_ids)
+    print("vocab_size = ", vocab_size)
+    attention_mask = torch.ones(1, N, dtype=torch.long).to(DEVICE)     # no padding
+
+    layer_pp_dim = {}
+    layer_nu_over_d = {}
+    layer_nu_over_N = {}
+    num_layers = 12
+    for layer_id in range(0,num_layers + 1):
+        layer_pp_dim[layer_id] = np.zeros(num_iterations)
+        layer_nu_over_d[layer_id] = np.zeros(num_iterations)
+        layer_nu_over_N[layer_id] = np.zeros(num_iterations)
+
+    for i in range(num_iterations):
+        print("iteration " + str(i))
+        random_indices = np.random.choice(vocab_size, N, replace = False)
+        np_random_token_ids = np.zeros(len(random_indices))
+        count = 0
+        for ridx in random_indices:
+            np_random_token_ids[count] = valid_bert_base_token_ids[ridx]
+            count+=1
+        print("np_random_token_ids : max = ", np.max(np_random_token_ids), ", min = ", np.min(np_random_token_ids) , 
+              ", mean = ", np.mean(np_random_token_ids), ", std = ", np.std(np_random_token_ids))
+        
+        random_token_ids = torch.tensor(np_random_token_ids, dtype=torch.long)
+
+        input_ids = random_token_ids.unsqueeze(0).to(DEVICE)          # (1, N)
+        # Forward pass
+        with torch.no_grad():
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+
+        # Extract per-layer representations
+        # hidden_states is a tuple of (num_layers + 1) tensors, each shape (1, N, 768)
+        # Index 0 = embedding layer, indices 1–12 = transformer layers 1–12
+        hidden_states = outputs.hidden_states  # tuple of 13 tensors
+        layer_representations = {}
+        for layer_idx, hs in enumerate(hidden_states):
+            rep = hs.squeeze(0)
+            np_rep = rep.cpu().numpy()
+            dim_rep = np_rep.shape[1]
+            pp_dim_rep = float(calculate_PatnaikPearson_dim(np_rep))
+            nu_over_d_rep = pp_dim_rep / dim_rep
+            nu_over_N_rep = pp_dim_rep / N
+            layer_pp_dim[layer_idx][i] = pp_dim_rep
+            layer_nu_over_d[layer_idx][i] = nu_over_d_rep
+            layer_nu_over_N[layer_idx][i] = nu_over_N_rep
+
+    results_dict = {
+            "layer_pp_dim" : layer_pp_dim,
+            "layer_nu_over_d" : layer_nu_over_d,
+            "layer_nu_over_N" : layer_nu_over_N
+        }
+
+    return results_dict
+    
+def DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment(model : 'transformers.models.qwen2.modeling_qwen2.Qwen2Model', 
+                                                     tokenizer : 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast',
+                                                     DEVICE : 'torch.device',
+                                                     N : int = 2000, 
+                                                     num_iterations : int = 1
+                                                    ):
+
+    max_N = 130000 # max context length (approx)
+    N = min(N, max_N)
+
+    vocab_size = tokenizer.vocab_size
+    print("vocab_size = ", vocab_size)
+    
+    attention_mask = torch.ones(1, N, dtype=torch.long).to(DEVICE)     # no padding
+
+    layer_pp_dim = {}
+    layer_nu_over_d = {}
+    layer_nu_over_N = {}
+    num_layers = 29
+    for layer_id in range(0,num_layers + 1):
+        layer_pp_dim[layer_id] = np.zeros(num_iterations)
+        layer_nu_over_d[layer_id] = np.zeros(num_iterations)
+        layer_nu_over_N[layer_id] = np.zeros(num_iterations)
+
+    for i in range(num_iterations):
+        print("iteration " + str(i))
+        random_token_ids = torch.randperm(vocab_size, dtype=torch.long)[:N]
+
+        input_ids = random_token_ids.unsqueeze(0).to(DEVICE)          # (1, N)
+        # Forward pass
+        with torch.no_grad():
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+
+        # Extract per-layer representations
+        # hidden_states: tuple of (num_layers + 1) tensors, each shape (1, N, 1536)
+        hidden_states = outputs.hidden_states  # tuple of tensors
+        layer_representations = {}
+        for layer_idx, hs in enumerate(hidden_states):
+            rep = hs.squeeze(0)
+            np_rep = rep.cpu().numpy().astype(np.float32)
+            dim_rep = np_rep.shape[1]
+            pp_dim_rep = float(calculate_PatnaikPearson_dim(np_rep))
+            nu_over_d_rep = pp_dim_rep / dim_rep
+            nu_over_N_rep = pp_dim_rep / N
+            layer_pp_dim[layer_idx][i] = pp_dim_rep
+            layer_nu_over_d[layer_idx][i] = nu_over_d_rep
+            layer_nu_over_N[layer_idx][i] = nu_over_N_rep
+
+    results_dict = {
+            "layer_pp_dim" : layer_pp_dim,
+            "layer_nu_over_d" : layer_nu_over_d,
+            "layer_nu_over_N" : layer_nu_over_N
+        }
+
+    return results_dict
