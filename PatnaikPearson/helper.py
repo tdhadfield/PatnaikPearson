@@ -3523,11 +3523,11 @@ def addition_experiment_two(N : int,
         this_alpha = alpha_X1
         use_uniform = False
         use_cauchy = False
-  elif force_uniform:
+  if force_uniform:
         use_pareto = False
         use_uniform = True
         use_cauchy = False
-  elif force_cauchy:
+  if force_cauchy:
         use_pareto = False
         use_uniform = False
         use_cauchy = True
@@ -3563,11 +3563,11 @@ def addition_experiment_two(N : int,
         this_alpha = alpha_X2
         use_uniform = False
         use_cauchy = False
-  elif force_uniform:
+  if force_uniform:
         use_pareto = False
         use_uniform = True
         use_cauchy = False
-  elif force_cauchy:
+  if force_cauchy:
         use_pareto = False
         use_uniform = False
         use_cauchy = True
@@ -3612,7 +3612,165 @@ def addition_experiment_two(N : int,
   }
   
   return results_dict
+
+def concatenation_experiment(N : int,
+                             d1 : int,
+                             d2 : int,
+                             alpha_X1 : float,
+                             alpha_X2 : float,
+                             pareto_uniform_draws : bool = False,
+                             force_pareto : bool = False,
+                             force_uniform : bool = False,
+                             force_cauchy : bool = False,
+                             verbose : bool = False
+                            ) -> tuple:
+                            
+  """
+  generate data manifolds X1, X2, of shapes (N,d1) and (N,d2) 
+  using either Uniform, Pareto or Cauchy distributions
+  with tail exponents alpha_X1, alpha_X2
+  concatenate them : X12 = X1 oplus X2, to give shape (N, d1 + d2)
+  calculate Patnaik-Pearson dimension, nu/d and implied alpha for X1, X2 and X12
+  """
   
+  if verbose:
+      print("force_pareto = ", type(force_pareto), force_pareto)
+      print("force_uniform = ", type(force_uniform), force_uniform)
+      print("force_cauchy = ", type(force_cauchy), force_cauchy)
+      
+  uniform_draws = False
+
+  #this_random = np.random.randint(0, 3)
+  this_random = int(np.random.uniform(0,3))
+  print("this_random = ", this_random, this_random == 0, this_random == 1, this_random == 2)
+  use_pareto = this_random == 0
+  use_uniform = this_random == 1
+  use_cauchy = this_random == 2
+  print(use_pareto, use_uniform, use_cauchy)
+  this_alpha = np.random.uniform(0.1,5.0)
+
+  if force_pareto:
+        use_pareto = True
+        uniform_draws = pareto_uniform_draws 
+        this_alpha = alpha_X1
+        use_uniform = False
+        use_cauchy = False
+  if force_uniform:
+        use_pareto = False
+        use_uniform = True
+        use_cauchy = False
+  if force_cauchy:
+        use_pareto = False
+        use_uniform = False
+        use_cauchy = True
+        
+  if verbose:
+        print("X1 : use_pareto = ", use_pareto)
+        print("X1 : use_uniform = ", use_uniform)
+        print("X1 : use_cauchy = ", use_cauchy)
+        
+  X1 = generate_data_manifold(N, 
+                              d1, 
+                              this_alpha, 
+                              uniform_draws,
+                              use_pareto,
+                              use_uniform,
+                              use_cauchy)
+  dim_X1 = X1.shape[1]
+  pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
+  nu_over_d_X1 = pp_dim_X1 / dim_X1
+  actual_alpha_X1 = 0.0
+  if force_pareto:
+    actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
+    
+  if verbose:
+      print("dim_X1 = ", dim_X1)
+      print("pp_dim_X1 = ", pp_dim_X1)
+      print("nu_over_d_X1 = ", nu_over_d_X1)
+      if force_pareto:
+          print("actual_alpha_X1 = ", actual_alpha_X1)
+      print("this_alpha = ", this_alpha)
+
+  #this_random = np.random.randint(0, 3)
+  this_random = int(np.random.uniform(0,3))
+  print("this_random = ", this_random, this_random == 0, this_random == 1, this_random == 2)
+  use_pareto = this_random == 0
+  use_uniform = this_random == 1
+  use_cauchy = this_random == 2
+  print(use_pareto, use_uniform, use_cauchy)
+  this_alpha = np.random.uniform(0.1,5.0)
+
+  if force_pareto:
+        use_pareto = True
+        uniform_draws = pareto_uniform_draws 
+        this_alpha = alpha_X2
+        use_uniform = False
+        use_cauchy = False
+  if force_uniform:
+        use_pareto = False
+        use_uniform = True
+        use_cauchy = False
+  if force_cauchy:
+        use_pareto = False
+        use_uniform = False
+        use_cauchy = True
+        
+  if verbose:
+        print("X2 : use_pareto = ", use_pareto)
+        print("X2 : use_uniform = ", use_uniform)
+        print("X2 : use_cauchy = ", use_cauchy)
+        
+  X2 = generate_data_manifold(N, 
+                              d2, 
+                              this_alpha, 
+                              uniform_draws,
+                              use_pareto,
+                              use_uniform,
+                              use_cauchy)
+  dim_X2 = X2.shape[1]
+  pp_dim_X2 = calculate_PatnaikPearson_dim(X2)
+  nu_over_d_X2 = pp_dim_X2 / dim_X2
+  actual_alpha_X2 = 0.0
+  if force_pareto:
+    actual_alpha_X2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X2, dim_X2)
+    
+  if verbose:
+      print("dim_X2 = ", dim_X2)
+      print("pp_dim_X2 = ", pp_dim_X2)
+      print("nu_over_d_X2 = ", nu_over_d_X2)
+      if force_pareto:
+          print("actual_alpha_X2 = ", actual_alpha_X2)
+      print("this_alpha = ", this_alpha)
+
+  X1concatX2 = np.concatenate([X1, X2], axis=1)
+  dim_X1concatX2 = X1concatX2.shape[1]
+  pp_dim_X1concatX2 = calculate_PatnaikPearson_dim(X1concatX2)
+  nu_over_d_X1concatX2 = pp_dim_X1concatX2 / dim_X1concatX2
+  actual_alpha_X1concatX2 = 0.0
+  if force_pareto:
+    actual_alpha_X1concatX2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1concatX2, dim_X1concatX2)
+    
+  if verbose:
+      print("dim_X1concatX2 = ", dim_X1concatX2)
+      print("pp_dim_X1concatX2 = ", pp_dim_X1concatX2)
+      print("nu_over_d_X1concatX2 = ", nu_over_d_X1concatX2)
+      if force_pareto:
+          print("actual_alpha_X1concatX2 = ", actual_alpha_X1concatX2)
+
+  results_dict = { 
+    "actual_alpha_X1" : actual_alpha_X1, 
+    "actual_alpha_X2" : actual_alpha_X2, 
+    "actual_alpha_X1concatX2" : actual_alpha_X1concatX2, 
+    "pp_dim_X1" : pp_dim_X1,
+    "pp_dim_X2" : pp_dim_X2,
+    "pp_dim_X1concatX2" : pp_dim_X1concatX2,
+    "nu_over_d_X1" : nu_over_d_X1,
+    "nu_over_d_X2" : nu_over_d_X2, 
+    "nu_over_d_X1concatX2" : nu_over_d_X1concatX2
+  }
+  
+  return results_dict
+   
 def analyse_embeddings(these_embeddings : np.ndarray,
                        verbose : bool = False
                        ):
@@ -3826,3 +3984,48 @@ def DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment(mo
         }
 
     return results_dict
+    
+def normalisation_experiment(N : int,
+                            d : int,
+                            alpha_X : float,
+                            uniform_draws : bool = False,
+                            use_pareto : bool = True,
+                            use_uniform : bool = False,
+                            use_cauchy : bool = False,
+                            verbose : bool = False
+                            ) -> tuple:
+
+
+  X = generate_data_manifold(N, d, alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+
+  dim_X = X.shape[1]
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  nu_over_d_X = pp_dim_X / dim_X
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+
+  eps = 1e-6
+  num_rows = X.shape[0]
+  Xnormalised = np.zeros(X.shape)
+  for row_num in range(0,num_rows):
+    this_row_vector = X[row_num,:]
+    this_row_vector_demeaned = this_row_vector - this_row_vector.mean()
+    this_norm_squared = (this_row_vector_demeaned**2).sum()
+    this_normalisation_factor = 1.0 / math.sqrt(this_norm_squared + eps)
+    this_row_vector_normalised = this_row_vector_demeaned * this_normalisation_factor
+    Xnormalised[row_num,:] = this_row_vector_normalised
+
+  pp_dim_Xnormalised = calculate_PatnaikPearson_dim(Xnormalised)
+  dim_Xnormalised = Xnormalised.shape[1]
+  nu_over_d_Xnormalised = pp_dim_Xnormalised / dim_Xnormalised
+  actual_alpha_Xnormalised = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xnormalised, dim_Xnormalised)
+  
+  results_dict = {
+    "pp_dim_X" : pp_dim_X,
+    "nu_over_d_X" : nu_over_d_X,
+    "actual_alpha_X" : actual_alpha_X,
+    "pp_dim_Xnormalised" : pp_dim_Xnormalised, 
+    "nu_over_d_Xnormalised" : nu_over_d_Xnormalised,
+    "actual_alpha_Xnormalised" : actual_alpha_Xnormalised
+  }
+  
+  return results_dict
