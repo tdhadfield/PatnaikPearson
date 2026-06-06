@@ -90,3 +90,9 @@ from .helper import this_log10
 from .helper import product_alpha_experiment
 from .helper import relu_experiment
 from .helper import addition_experiment
+from .helper import addition_experiment_two
+from .helper import analyse_embeddings
+from .helper import plot_per_layer_graphs
+from .helper import bert_token_embedding_layerwise_pp_dim_experiment
+from .helper import DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment
+
