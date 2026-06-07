@@ -3351,7 +3351,7 @@ def product_alpha_experiment(N : int,
                              d : int,
                              alpha_X : float,
                              alpha_W : float
-                             ) -> tuple:
+                             ) -> dict:
                                  
   # ** TO DO : adapt to GPU?
 
@@ -3444,7 +3444,7 @@ def addition_experiment(N : int,
                         d : int,
                         alpha_X1 : float,
                         alpha_X2 : float
-                        ) -> tuple:
+                        ) -> dict:
                             
   """
   generate data manifolds X1, X2, both of shape (N,d) 
@@ -3494,7 +3494,7 @@ def addition_experiment_two(N : int,
                         force_uniform : bool = False,
                         force_cauchy : bool = False,
                         verbose : bool = False
-                        ) -> tuple:
+                        ) -> dict:
                             
   """
   generate data manifolds X1, X2, both of shape (N,d) 
@@ -3623,7 +3623,7 @@ def concatenation_experiment(N : int,
                              force_uniform : bool = False,
                              force_cauchy : bool = False,
                              verbose : bool = False
-                            ) -> tuple:
+                            ) -> dict:
                             
   """
   generate data manifolds X1, X2, of shapes (N,d1) and (N,d2) 
@@ -3775,8 +3775,6 @@ def analyse_embeddings(these_embeddings : np.ndarray,
                        verbose : bool = False
                        ):
                            
-                     
-
   print("these_embeddings.shape = ", these_embeddings.shape)
   num_embeddings, embedding_dim = these_embeddings.shape
   print("num_embeddings = ", num_embeddings)
@@ -3868,7 +3866,7 @@ def bert_token_embedding_layerwise_pp_dim_experiment(model : 'transformers.model
                                                      DEVICE : 'torch.device',
                                                      N : int = 512, 
                                                      num_iterations : int = 1
-                                                    ):
+                                                    ) -> dict:
 
     max_N = 512 # BERT context length
     N = min(N, max_N)
@@ -3934,7 +3932,7 @@ def DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment(mo
                                                      DEVICE : 'torch.device',
                                                      N : int = 2000, 
                                                      num_iterations : int = 1
-                                                    ):
+                                                    ) -> dict:
 
     max_N = 130000 # max context length (approx)
     N = min(N, max_N)
@@ -3993,7 +3991,7 @@ def normalisation_experiment(N : int,
                             use_uniform : bool = False,
                             use_cauchy : bool = False,
                             verbose : bool = False
-                            ) -> tuple:
+                            ) -> dict:
 
 
   X = generate_data_manifold(N, d, alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
