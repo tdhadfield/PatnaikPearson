@@ -96,5 +96,5 @@ from .helper import analyse_embeddings
 from .helper import plot_per_layer_graphs
 from .helper import bert_token_embedding_layerwise_pp_dim_experiment
 from .helper import DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment
+from .helper import DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_initial_pp_dim_experiment
 from .helper import normalisation_experiment
-

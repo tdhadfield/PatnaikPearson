@@ -4027,3 +4027,58 @@ def normalisation_experiment(N : int,
   }
   
   return results_dict
+  
+def DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_initial_pp_dim_experiment(model : 'transformers.models.qwen2.modeling_qwen2.Qwen2Model', 
+                                                     tokenizer : 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast',
+                                                     DEVICE : 'torch.device',
+                                                     N : int = 2000, 
+                                                     num_iterations : int = 1,
+                                                     verbose : bool = False
+                                                    ) -> dict:
+
+    pp_dim_vals = np.zeros(num_iterations)
+    nu_over_d_vals = np.zeros(num_iterations)
+
+    max_N = 130000 # max context length (approx)
+    N = min(N, max_N)
+
+    vocab_size = tokenizer.vocab_size
+    print("vocab_size = ", vocab_size)
+
+    # Extract embeddings directly from the embedding layer
+    # No need for a forward pass — just index into the embedding matrix directly
+    embedding_layer = model.embed_tokens  # (vocab_size, hidden_size)
+    
+    for i in range(num_iterations):
+        print("iteration " + str(i))
+        #random_token_ids = torch.randperm(vocab_size, dtype=torch.long)[:N]
+        perm = torch.randperm(vocab_size)[:N]  # random permutation, take first N
+        sampled_token_ids = perm.to(DEVICE)
+        
+        # Extract embeddings directly from the embedding layer
+        # No need for a forward pass — just index into the embedding matrix directly
+        with torch.no_grad():
+            token_embeddings = embedding_layer(sampled_token_ids)  # (N, hidden_size)
+
+        # convert to numpy array
+        X = ((token_embeddings.cpu()).numpy()).astype(np.float32)
+        # np_rep = (rep.cpu().numpy()).astype(np.float32)
+        pp_dim_X = float(calculate_PatnaikPearson_dim(X))
+        dim_X = X.shape[1]
+        nu_over_d_X = pp_dim_X / dim_X
+        if verbose:
+            print(i, pp_dim_X, nu_over_d_X)
+
+        pp_dim_vals[i] = pp_dim_X
+        nu_over_d_vals[i] = nu_over_d_X
+
+    results_dict = {
+        "pp_dim_vals" : pp_dim_vals,
+        "nu_over_d_vals" : nu_over_d_vals
+    }
+
+    return results_dict
+        
+        
+
+    
