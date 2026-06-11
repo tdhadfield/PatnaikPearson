@@ -28,6 +28,7 @@ from .helper import calculate_nu_alpha_W_WTW_square_W
 from .helper import calculate_nu_alpha_X_XTX_XXT
 from .helper import experiment_relu_X_gelu_X_tanh_X
 from .helper import this_relu
+from .helper import this_sigmoid
 from .helper import this_tanh
 from .helper import gelu_exact
 from .helper import gelu_approx
@@ -89,6 +90,7 @@ from .helper import this_abs
 from .helper import this_log10
 from .helper import product_alpha_experiment
 from .helper import relu_experiment
+from .helper import sigmoid_experiment
 from .helper import addition_experiment
 from .helper import addition_experiment_two
 from .helper import concatenation_experiment
@@ -98,3 +100,6 @@ from .helper import bert_token_embedding_layerwise_pp_dim_experiment
 from .helper import DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_layerwise_pp_dim_experiment
 from .helper import DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_initial_pp_dim_experiment
 from .helper import normalisation_experiment
+from .helper import interpolation_experiment
+from .helper import softmax_experiment
+from .helper import pp_dim_AB_experiment

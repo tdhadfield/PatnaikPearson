@@ -8,6 +8,7 @@ import cupy as cp
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import qr
 import pandas as pd
+import random
 
 np.random.seed(42)
 use_gpu = torch.cuda.is_available()
@@ -1160,6 +1161,12 @@ def this_tanh(x):
 # Apply the function using np.vectorize
 this_vec_tanh = np.vectorize(this_tanh)
 
+def this_sigmoid(x):
+    return 0.5 * (this_tanh(0.5 * x) + 1)
+    
+# Apply the function using np.vectorize
+this_vec_sigmoid = np.vectorize(this_sigmoid)
+
 from scipy.special import erf
 
 def gelu_exact(x: np.ndarray) -> np.ndarray:
@@ -1295,7 +1302,8 @@ def generate_data_manifold(N : int,
                            use_pareto : bool = True,
                            use_uniform : bool = False,
                            use_cauchy : bool = False,
-                           verbose : bool = False
+                           verbose : bool = False,
+                           use_svd : bool = False
                            ) -> np.ndarray:
 
   # N is the number of points in our realisation X of our data manifold
@@ -1327,17 +1335,35 @@ def generate_data_manifold(N : int,
 
   Xdiag = np.diag(these_sigmas)
   
-  if use_gpu:
-      if verbose:
-        print("running on GPU")
-      X0_gpu = cp.array(X0)  # move to GPU
-      Xdiag_gpu = cp.array(Xdiag)  # move to GPU 
-      X_gpu = cp.matmul(X0_gpu, Xdiag_gpu)  # runs on GPU
-      X = cp.asnumpy(X_gpu)  # move back to numpy
-  else:
-    if verbose:
-      print("running on CPU")
-    X = X0 @ Xdiag
+  X = np.zeros((N,d))
+  
+  if use_svd:
+    print("generate_data_manifold: using svd") 
+    U = generate_orthogonal_matrix(N)
+    Xdiag = np.zeros((N,d))
+    for i in range(0, min(N,d)):
+        Xdiag[i,i] = these_sigmas[i]
+    VT = generate_orthogonal_matrix(d)
+    if use_gpu:
+        U_gpu = cp.array(U) # move to GPU
+        Xdiag_gpu = cp.array(Xdiag)  # move to GPU 
+        VT_gpu = cp.array(VT) # move to GPU
+        X_gpu = cp.matmul(cp.matmul(U_gpu, Xdiag_gpu), VT_gpu)  # runs on GPU
+        X = cp.asnumpy(X_gpu)  # move back to numpy
+    else:
+        X = U @ Xdiag @ VT      
+  else: 
+    if use_gpu:
+        if verbose:
+            print("running on GPU")
+        X0_gpu = cp.array(X0)  # move to GPU
+        Xdiag_gpu = cp.array(Xdiag)  # move to GPU 
+        X_gpu = cp.matmul(X0_gpu, Xdiag_gpu)  # runs on GPU
+        X = cp.asnumpy(X_gpu)  # move back to numpy
+    else:
+        if verbose:
+            print("running on CPU")
+        X = X0 @ Xdiag
 
   return X
   
@@ -3401,10 +3427,37 @@ def product_alpha_experiment(N : int,
 def relu_experiment(N : int,
                     d : int,
                     alpha_X : float,
+                    generate_weight_matrix : bool = False,
+                    uniform_draws : bool = False,
+                    use_pareto : bool = True,
+                    use_uniform : bool = False,
+                    use_cauchy : bool = False,
                     verbose : bool = False
                     ) -> dict:
+                        
+                        
 
-  X = generate_data_manifold(N, d, alpha_X)
+  #X = generate_data_manifold(N, d, alpha_X)
+  
+  X = np.zeros((N,d))
+  if generate_weight_matrix:
+      X = generate_square_weight_matrix(d, 
+                                  alpha_X,
+                                  uniform_draws,
+                                  use_pareto,
+                                  use_uniform,
+                                  use_cauchy,
+                                  verbose)
+  else:
+      X = generate_data_manifold(N, 
+                    d, 
+                    alpha_X,
+                    uniform_draws,
+                    use_pareto,
+                    use_uniform,
+                    use_cauchy,
+                    verbose)
+  
   dim_X = X.shape[1]
   pp_dim_X = calculate_PatnaikPearson_dim(X)
   nu_over_d_X = pp_dim_X / dim_X
@@ -3439,7 +3492,76 @@ def relu_experiment(N : int,
 	}
 
   return results_dict
+ 
+
+def sigmoid_experiment(N : int,
+                    d : int,
+                    alpha_X : float,
+                    generate_weight_matrix : bool = False,
+                    pareto_uniform_draws : bool = False,
+                    use_pareto : bool = False,
+                    use_uniform : bool = False,
+                    use_cauchy : bool = False,
+                    verbose : bool = False
+                    ) -> dict:
+                        
+  X = np.zeros((N,d))
   
+  if generate_weight_matrix:
+      X = generate_square_weight_matrix(d, 
+                                  alpha_X,
+                                  pareto_uniform_draws,
+                                  use_pareto,
+                                  use_uniform,
+                                  use_cauchy,
+                                  verbose
+                                  )
+  else:
+      X = generate_data_manifold(N, 
+                    d, 
+                    alpha_X, 
+                    pareto_uniform_draws,
+                    use_pareto,
+                    use_uniform,
+                    use_cauchy)
+                    				
+  dim_X = X.shape[1]
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  nu_over_d_X = pp_dim_X / dim_X
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+
+  if verbose:
+    print("dim_X = ", dim_X)
+    print("pp_dim_X = ", pp_dim_X)
+    print("nu_over_d_X = ", nu_over_d_X)
+    print("actual_alpha_X = ", actual_alpha_X)
+
+  sigmoidX = this_vec_sigmoid(X)
+  #print(sigmoidX[0:n,0:n])
+  dim_sigmoidX = sigmoidX.shape[1]
+  pp_dim_sigmoidX = calculate_PatnaikPearson_dim(sigmoidX)
+  nu_over_d_sigmoidX = pp_dim_sigmoidX / dim_sigmoidX
+  actual_alpha_sigmoidX = calculate_alpha_given_nu_over_d_and_d(nu_over_d_sigmoidX, dim_sigmoidX)
+
+  if verbose:
+    print("dim_sigmoidX = ", dim_sigmoidX)
+    print("pp_dim_sigmoidX = ", pp_dim_sigmoidX)
+    print("nu_over_d_sigmoidX = ", nu_over_d_sigmoidX)
+    print("actual_alpha_sigmoidX = ", actual_alpha_sigmoidX)
+
+  results_dict = {
+	"actual_alpha_X" : actual_alpha_X,
+	"actual_alpha_sigmoidX" : actual_alpha_sigmoidX,
+	"pp_dim_X" : pp_dim_X, 
+	"pp_dim_sigmoidX" : pp_dim_sigmoidX,
+	"nu_over_d_X" : nu_over_d_X, 
+	"nu_over_d_sigmoidX" : nu_over_d_sigmoidX
+	}
+
+  return results_dict
+  
+
+ 
 def addition_experiment(N : int,
                         d : int,
                         alpha_X1 : float,
@@ -4078,6 +4200,232 @@ def DeepSeek_R1_Distill_Qwen_1_5B_token_embedding_initial_pp_dim_experiment(mode
     }
 
     return results_dict
+    
+def interpolation_experiment(N : int, 
+                            d : int, 
+                            initial_alpha_X0 : float, 
+                            initial_alpha_X1 : float
+                            ) -> dict:
+
+	t_vals = np.arange(0.0,1.01,0.01)
+	num_iterations = len(t_vals)
+
+	initial_alpha_X0_vals = np.zeros(num_iterations)
+	initial_alpha_X1_vals = np.zeros(num_iterations)
+	actual_alpha_X0_vals = np.zeros(num_iterations)
+	actual_alpha_X1_vals = np.zeros(num_iterations)
+	actual_alpha_Xt_vals = np.zeros(num_iterations)
+	nu_over_d_X0_vals = np.zeros(num_iterations)
+	nu_over_d_X1_vals = np.zeros(num_iterations)
+	nu_over_d_Xt_vals = np.zeros(num_iterations)
+	estimate_alpha_Xt_vals = np.zeros(num_iterations)
+	estimate_nu_over_d_Xt_vals = np.zeros(num_iterations)
+
+	X0 = generate_data_manifold(N, d, initial_alpha_X0)
+	pp_dim_X0 = calculate_PatnaikPearson_dim(X0)
+	dim_X0 = X0.shape[1]
+	nu_over_d_X0 = pp_dim_X0 / dim_X0
+	actual_alpha_X0 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X0, dim_X0)
+
+	X1 = generate_data_manifold(N, d, initial_alpha_X1)
+	pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
+	dim_X1 = X1.shape[1]
+	nu_over_d_X1 = pp_dim_X1 / dim_X1
+	actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
+
+	i = 0
+	for t in t_vals:
+		Xt = (1.0 - t) * X0 + t * X1
+		pp_dim_Xt = calculate_PatnaikPearson_dim(Xt)
+		dim_Xt = Xt.shape[1]
+		nu_over_d_Xt = pp_dim_Xt / dim_Xt
+		actual_alpha_Xt = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xt, dim_Xt)
+		estimate_alpha_Xt = (1.0 - t) * actual_alpha_X0 + t * actual_alpha_X1
+		_, estimate_nu_over_d_Xt = calculate_nu_and_nu_over_d_given_alpha_d_analytic(estimate_alpha_Xt, dim_Xt)
+
+		print("actual_alpha_X0 = ", actual_alpha_X0, ", actual_alpha_X1 = ", actual_alpha_X1, "t = ", t, ", actual_alpha_Xt = ", actual_alpha_Xt, "estimate_alpha_Xt = ", estimate_alpha_Xt)
+
+		initial_alpha_X0_vals[i] = initial_alpha_X0
+		initial_alpha_X1_vals[i] = initial_alpha_X1
+		actual_alpha_X0_vals[i] = actual_alpha_X0
+		actual_alpha_X1_vals[i] = actual_alpha_X1
+		actual_alpha_Xt_vals[i] = actual_alpha_Xt
+		nu_over_d_X0_vals[i] = nu_over_d_X0
+		nu_over_d_X1_vals[i] = nu_over_d_X1
+		nu_over_d_Xt_vals[i] = nu_over_d_Xt
+		estimate_alpha_Xt_vals[i] = estimate_alpha_Xt
+		estimate_nu_over_d_Xt_vals[i] = estimate_nu_over_d_Xt
+		i += 1
+  
+	results_dict = {
+        "t_vals" : t_vals,
+		"initial_alpha_X0_vals" : initial_alpha_X0_vals,
+		"initial_alpha_X1_vals" : initial_alpha_X1_vals,
+		"actual_alpha_X0_vals" : actual_alpha_X0_vals,
+		"actual_alpha_X1_vals" : actual_alpha_X1_vals,
+		"actual_alpha_Xt_vals" : actual_alpha_Xt_vals,
+		"nu_over_d_X0_vals" : nu_over_d_X0_vals,
+		"nu_over_d_X1_vals" : nu_over_d_X1_vals,
+		"nu_over_d_Xt_vals" : nu_over_d_Xt_vals,
+		"estimate_alpha_Xt_vals" : estimate_alpha_Xt_vals,
+		"estimate_nu_over_d_Xt_vals" : estimate_nu_over_d_Xt_vals
+	}
+
+	return results_dict
+    
+def softmax_experiment(	N : int, 
+						d : int, 
+						temps : np.ndarray, 
+						alpha : float, 
+						uniform_draws : bool = False,
+						use_pareto : bool = True,
+						use_uniform : bool = False,
+						use_cauchy : bool = False,
+						verbose : bool = False
+						) -> dict:
+
+
+
+	X = generate_data_manifold(N, d, alpha, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+
+	pp_dim_X = calculate_PatnaikPearson_dim(X)
+	dim_X = X.shape[1]
+	nu_over_d_X = pp_dim_X / dim_X
+	actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+
+	#log_temps = np.arange(-6.0,11.0,1.0) # np.arange(-1.0, 1.1, 0.1)
+	#print(log_temps)
+	#temps = 10**log_temps
+	#print(temps)
+
+	num_iterations = len(temps)
+
+	pp_dim_softmax_X_vals = np.zeros(num_iterations)
+	nu_over_d_softmax_X_vals = np.zeros(num_iterations)
+	actual_alpha_softmax_X_vals = np.zeros(num_iterations)
+
+	i = 0
+	for T in temps:
+		softmax_X = row_wise_softmax(X,T)
+		pp_dim_softmax_X = calculate_PatnaikPearson_dim(softmax_X)
+		dim_softmax_X = softmax_X.shape[1]
+		nu_over_d_softmax_X = pp_dim_softmax_X / dim_softmax_X
+		actual_alpha_softmax_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_softmax_X, dim_softmax_X)
+
+		pp_dim_softmax_X_vals[i] = pp_dim_softmax_X
+		nu_over_d_softmax_X_vals[i] = nu_over_d_softmax_X
+		actual_alpha_softmax_X_vals[i] = actual_alpha_softmax_X
+
+		print(i, T, pp_dim_softmax_X, nu_over_d_softmax_X, actual_alpha_softmax_X)
+		i += 1
+		
+	results_dict = {
+		"pp_dim_X" : pp_dim_X,
+		"nu_over_d_X" : nu_over_d_X,
+		"actual_alpha_X" : actual_alpha_X,
+		"pp_dim_softmax_X_vals" : pp_dim_softmax_X_vals,
+		"nu_over_d_softmax_X_vals" : nu_over_d_softmax_X_vals,
+		"actual_alpha_softmax_X_vals" : actual_alpha_softmax_X_vals
+	}
+	
+	return results_dict
+    
+
+def pp_dim_AB_experiment(num_iterations : int = 10, size_scale : int = 500) -> dict:
+
+	these_alphas = np.arange(0.1, 5.15, 0.05) # 100
+
+	uniform_draws = True
+	use_pareto = True
+	use_uniform = False
+	use_cauchy = False
+	verbose = False
+	use_svd = True
+
+	pp_dim_A_vals = np.zeros(num_iterations)
+	pp_dim_B_vals = np.zeros(num_iterations)
+	pp_dim_AB_vals = np.zeros(num_iterations)
+	min_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
+	max_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
+
+	nu_over_d_A_vals = np.zeros(num_iterations)
+	nu_over_d_B_vals = np.zeros(num_iterations)
+	nu_over_d_AB_vals = np.zeros(num_iterations)
+
+	min_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
+	max_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
+	nu_over_d_A_times_nu_over_d_B_vals = np.zeros(num_iterations)
+
+	for i in range(num_iterations):
+
+		N = int(size_scale * ( 1 + np.random.uniform(0,1)))
+		d = N + int(size_scale * (np.random.uniform(0,1) - 0.5))
+		m = d + int(size_scale * np.random.uniform(0,1))
+		print(i, N, d, m)
+
+		alpha_1 = random.choice(these_alphas)
+		alpha_2 = random.choice(these_alphas)
+		print(i, alpha_1, alpha_2)
+
+		A = generate_data_manifold(N, d, alpha_1, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+		B = generate_data_manifold(d, m, alpha_2, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+
+		pp_dim_A = calculate_PatnaikPearson_dim(A)
+		dim_A = A.shape[1]
+		nu_over_d_A = pp_dim_A / dim_A
+
+		pp_dim_B = calculate_PatnaikPearson_dim(B)
+		dim_B = B.shape[1]
+		nu_over_d_B = pp_dim_B / dim_B
+
+		cp_AB = cp.matmul(cp.array(A), cp.array(B))
+		AB = cp.asnumpy(cp_AB)
+		pp_dim_AB = calculate_PatnaikPearson_dim(AB)
+		dim_AB = AB.shape[1]
+		nu_over_d_AB = pp_dim_AB / dim_AB
+
+		min_pp_dim_A_pp_dim_B = min(pp_dim_A, pp_dim_B)
+		max_pp_dim_A_pp_dim_B = max(pp_dim_A, pp_dim_B)
+
+		min_nu_over_d_A_nu_over_d_B = min(nu_over_d_A, nu_over_d_B)
+		max_nu_over_d_A_nu_over_d_B = max(nu_over_d_A, nu_over_d_B)
+
+		nu_over_d_A_times_nu_over_d_B = nu_over_d_A * nu_over_d_B
+
+		pp_dim_A_vals[i] = pp_dim_A
+		pp_dim_B_vals[i] = pp_dim_B
+		pp_dim_AB_vals[i] = pp_dim_AB
+		min_pp_dim_A_pp_dim_B_vals[i] = min_pp_dim_A_pp_dim_B
+		max_pp_dim_A_pp_dim_B_vals[i] = max_pp_dim_A_pp_dim_B
+
+		nu_over_d_A_vals[i] = nu_over_d_A
+		nu_over_d_B_vals[i] = nu_over_d_B
+		nu_over_d_AB_vals[i] = nu_over_d_AB
+
+		min_nu_over_d_A_nu_over_d_B_vals[i] = min_nu_over_d_A_nu_over_d_B
+		max_nu_over_d_A_nu_over_d_B_vals[i] = max_nu_over_d_A_nu_over_d_B
+		nu_over_d_A_times_nu_over_d_B_vals[i] = nu_over_d_A * nu_over_d_B
+
+		print(i, pp_dim_AB, pp_dim_A, pp_dim_B)
+		print(i, "is PP(AB) = ", pp_dim_AB , " leq min(PP(A), PP(B)) = ", min(pp_dim_A, pp_dim_B))
+		print(i, "is nu/d (AB) = ", nu_over_d_AB, " leq min( nu/d (A), nu/d (B)) = ", min(nu_over_d_A, nu_over_d_B)) 
+		print(i, "is nu/d (A) * nu/d (B) = ", nu_over_d_A * nu_over_d_B, " leq  nu/d (AB) = ", nu_over_d_AB)
+		
+	results_dict = {
+	 "pp_dim_A_vals" : pp_dim_A_vals,
+	 "pp_dim_B_vals" : pp_dim_B_vals,
+	 "pp_dim_AB_vals" : pp_dim_AB_vals,
+	 "min_pp_dim_A_pp_dim_B_vals" : min_pp_dim_A_pp_dim_B_vals,
+	 "max_pp_dim_A_pp_dim_B_vals" : max_pp_dim_A_pp_dim_B_vals,
+	 "nu_over_d_A_vals" : nu_over_d_A_vals,
+	 "nu_over_d_B_vals" : nu_over_d_B_vals,
+	 "nu_over_d_AB_vals" : nu_over_d_AB_vals,
+	 "min_nu_over_d_A_nu_over_d_B_vals" : min_nu_over_d_A_nu_over_d_B_vals,
+	 "max_nu_over_d_A_nu_over_d_B_vals" : max_nu_over_d_A_nu_over_d_B_vals,
+	 "nu_over_d_A_times_nu_over_d_B_vals" : nu_over_d_A_times_nu_over_d_B_vals
+	}
+	
+	return results_dict
         
         
 
