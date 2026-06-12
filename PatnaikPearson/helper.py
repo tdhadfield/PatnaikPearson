@@ -1929,12 +1929,12 @@ def estimate_product_nu_over_d(nu_over_d_1 : float,
   # calculate the corresponding product_alpha
   # calculate the corresponding nu_over_d
   
-  print("** estimate_product_nu_over_d: use new alpha - check the interpolation thresholds **")
+  #print("** estimate_product_nu_over_d: use new alpha - check the interpolation thresholds **")
 
   #return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=1.5, upper_interpolation_threshold=2.6)
   
   return estimate_product_nu_over_d_base(nu_over_d_1, d_1, nu_over_d_2, d_2, lower_interpolation_threshold=0.5, upper_interpolation_threshold=1.6)
-
+  
 def estimate_product_nu_over_d_base(nu_over_d_1 : float,
                                     d_1 : int,
                                     nu_over_d_2 : float,
@@ -1945,6 +1945,23 @@ def estimate_product_nu_over_d_base(nu_over_d_1 : float,
   # calculate alpha_1 corresponding to nu_over_d_1, and alpha_2 corresponding to nu_over_d_2
   # calculate the corresponding product_alpha
   # calculate the corresponding nu_over_d
+  
+  print("estimate_product_nu_over_d_base: using new simplified estimate = nu_over_d_1 * nu_over_d_2")
+  #return min(nu_over_d_1, nu_over_d_2)
+  return nu_over_d_1 * nu_over_d_2
+
+def estimate_product_nu_over_d_base_old(nu_over_d_1 : float,
+                                    d_1 : int,
+                                    nu_over_d_2 : float,
+                                    d_2 : int,
+                                    lower_interpolation_threshold : float,
+                                    upper_interpolation_threshold : float
+                                    ) -> float:
+  # calculate alpha_1 corresponding to nu_over_d_1, and alpha_2 corresponding to nu_over_d_2
+  # calculate the corresponding product_alpha
+  # calculate the corresponding nu_over_d
+  
+  # TO DO ** : DEPRECATE THIS
 
   alpha_1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_1, d_1)
   alpha_2 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_2, d_2)
@@ -2148,8 +2165,13 @@ def attention_experiment_new(N : int,
                          alpha_Q : float,
                          alpha_K : float,
                          alpha_V : float,
-                         verbose : bool = False
-                         ) -> tuple:
+                         verbose : bool = False,
+                         uniform_draws : bool = False,
+                         use_pareto : bool = True,
+                         use_uniform : bool = False,
+                         use_cauchy : bool = False,
+                         use_svd : bool = False
+                         ) -> dict:
                              
   # uses correct alpha
   # ** TO DO : adapt to GPU?                        
@@ -2161,7 +2183,7 @@ def attention_experiment_new(N : int,
   # alpha_K : tail exponent of WK (d * d matrix)
   # alpha_V : tail exponent of WV (d * d matrix)
 
-  X = generate_data_manifold(N, d, alpha_X)
+  X = generate_data_manifold(N, d, alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
   WQ = generate_square_weight_matrix(d, alpha_Q)
   WK = generate_square_weight_matrix(d, alpha_K)
   WV = generate_square_weight_matrix(d, alpha_V)
@@ -2187,7 +2209,12 @@ def attention_experiment_new(N : int,
     print("alpha_K = ", alpha_K, ", pp_dim_WK = ", pp_dim_WK, ", implied_alpha_K = ", implied_alpha_K)
     print("alpha_V = ", alpha_V, ", pp_dim_WV = ", pp_dim_WV, ", implied_alpha_V = ", implied_alpha_V)
 
-  XWQ = X @ WQ
+  XWQ = np.zeros((X.shape[0], WQ.shape[1]))
+  if use_gpu:
+    print("XWQ : using GPU")
+    XWQ = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WQ)))
+  else:
+    XWQ = X @ WQ
   dim_XWQ = XWQ.shape[1]
   actual_pp_dim_XWQ = calculate_PatnaikPearson_dim(XWQ)
   estimate_pp_dim_XWQ = dim_XWQ * estimate_product_nu_over_d(pp_dim_X / dim_XWQ, dim_XWQ, pp_dim_WQ / dim_WQ, dim_WQ)
@@ -2198,7 +2225,12 @@ def attention_experiment_new(N : int,
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WQ = ", pp_dim_WQ, ", actual_pp_dim_XWQ = ", actual_pp_dim_XWQ, ", estimate_pp_dim_XWQ = ", estimate_pp_dim_XWQ)
     print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
 
-  XWK = X @ WK
+  XWK = np.zeros((X.shape[0], WK.shape[1]))
+  if use_gpu:
+    print("XWK : using GPU")
+    XWK = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WK)))
+  else:
+    XWK = X @ WK
   dim_XWK = XWK.shape[1]
   actual_pp_dim_XWK = calculate_PatnaikPearson_dim(XWK)
   estimate_pp_dim_XWK = dim_XWK * estimate_product_nu_over_d(pp_dim_X / dim_X, dim_X, pp_dim_WK / dim_WK, dim_WK)
@@ -2209,7 +2241,12 @@ def attention_experiment_new(N : int,
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WK = ", pp_dim_WK, ", actual_pp_dim_XWK = ", actual_pp_dim_XWK, ", estimate_pp_dim_XWK = ", estimate_pp_dim_XWK)
     print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
 
-  XWV = X @ WV
+  XWV = np.zeros((X.shape[0], WV.shape[1]))
+  if use_gpu:
+    print("XWV : using GPU")
+    XWV = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WV)))
+  else:
+    XWV = X @ WV
   dim_XWV = XWV.shape[1]
   actual_pp_dim_XWV = calculate_PatnaikPearson_dim(XWV)
   estimate_pp_dim_XWV = dim_XWV * estimate_product_nu_over_d(pp_dim_X / dim_X, d, pp_dim_WV / dim_WV, dim_WV)
@@ -2220,7 +2257,14 @@ def attention_experiment_new(N : int,
     print("pp_dim_X = ", pp_dim_X, ", pp_dim_WV = ", pp_dim_WV, ", actual_pp_dim_XWV = ", actual_pp_dim_XWV, ", estimate_pp_dim_XWV = ", estimate_pp_dim_XWV)
     print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
 
-  QKT = XWQ @ XWK.T
+  #QKT = XWQ @ XWK.T
+  XWKT = XWK.T
+  QKT = np.zeros((XWQ.shape[0], XWKT.shape[1]))
+  if use_gpu:
+    print("QKT : using GPU")
+    QKT = cp.asnumpy(cp.matmul(cp.array(XWQ), cp.array(XWKT)))
+  else:
+    QKT = XWQ @ XWKT
   dim_QKT = QKT.shape[1]
   actual_pp_dim_QKT = calculate_PatnaikPearson_dim(QKT)
   estimate_pp_dim_QKT = dim_QKT * estimate_product_nu_over_d(actual_pp_dim_XWQ / dim_QKT, dim_QKT, actual_pp_dim_XWK / dim_XWK, dim_XWK)
@@ -2253,11 +2297,18 @@ def attention_experiment_new(N : int,
 
   estimate_pp_dim_AttnQK = dim_AttnQK * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQK, dim_AttnQK)
 
-  AttnQKV = AttnQK @ XWV
+  #AttnQKV = AttnQK @ XWV
+  AttnQKV = np.zeros((AttnQK.shape[0], XWV.shape[1]))
+  if use_gpu:
+    print("AttnQKV : using GPU")
+    AttnQKV = cp.asnumpy(cp.matmul(cp.array(AttnQK), cp.array(XWV)))
+  else:
+    AttnQKV = AttnQK @ XWV
   dim_AttnQKV = AttnQKV.shape[1]
 
   actual_pp_dim_AttnQKV = (calculate_PatnaikPearson_dim(AttnQKV)).astype(float)
-  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_pp_dim_AttnQKV / dim_AttnQKV, dim_AttnQKV)
+  actual_nu_over_d_AttnQKV = actual_pp_dim_AttnQKV / dim_AttnQKV
+  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_AttnQKV, dim_AttnQKV)
 
   estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
   estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
@@ -2265,17 +2316,21 @@ def attention_experiment_new(N : int,
   estimate_alpha_softmax_QKT = calculate_softmax_alpha(estimate_alpha_QKT)
   estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
   estimate_alpha_AttnQKV = estimate_product_alpha(estimate_alpha_softmax_QKT, dim_QKT, estimate_alpha_XWV, dim_XWV)
-  estimate_pp_dim_AttnQKV = dim_AttnQKV * calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+  estimate_nu_over_d_AttnQKV = calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+  estimate_pp_dim_AttnQKV = dim_AttnQKV * estimate_nu_over_d_AttnQKV
 
   if verbose:
     print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV, ", estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
     print("actual_pp_dim_AttnQKV = ", actual_pp_dim_AttnQKV, ", estimate_pp_dim_AttnQKV = ", estimate_pp_dim_AttnQKV)
     
   results_dict = {
+    "dim_AttnQKV" : dim_AttnQKV,
     "actual_pp_dim_AttnQKV" : actual_pp_dim_AttnQKV, 
     "estimate_pp_dim_AttnQKV" :  estimate_pp_dim_AttnQKV,
     "actual_alpha_AttnQKV" : actual_alpha_AttnQKV,
-    "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV
+    "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV,
+    "actual_nu_over_d_AttnQKV" : actual_nu_over_d_AttnQKV,
+    "estimate_nu_over_d_AttnQKV" : estimate_nu_over_d_AttnQKV
   }
 
   return results_dict
@@ -3565,7 +3620,8 @@ def sigmoid_experiment(N : int,
 def addition_experiment(N : int,
                         d : int,
                         alpha_X1 : float,
-                        alpha_X2 : float
+                        alpha_X2 : float,
+                        use_svd : bool = False
                         ) -> dict:
                             
   """
@@ -3574,14 +3630,20 @@ def addition_experiment(N : int,
   add them together (elementwise) : X1 + X2
   calculate Patnaik-Pearson dimension, nu/d and implied alpha for X1, X2 and X1 + X2
   """
-
-  X1 = generate_data_manifold(N, d, alpha_X1)
+  
+  uniform_draws = True
+  use_pareto = True
+  use_uniform = False
+  use_cauchy = False
+  verbose = False
+                           
+  X1 = generate_data_manifold(N, d, alpha_X1, uniform_draws, use_pareto, use_cauchy, verbose, use_svd)
   dim_X1 = X1.shape[1]
   pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
   nu_over_d_X1 = pp_dim_X1 / dim_X1
   actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
 
-  X2 = generate_data_manifold(N, d, alpha_X2)
+  X2 = generate_data_manifold(N, d, alpha_X2, uniform_draws, use_pareto, use_cauchy, verbose, use_svd)
   dim_X2 = X2.shape[1]
   pp_dim_X2 = calculate_PatnaikPearson_dim(X2)
   nu_over_d_X2 = pp_dim_X2 / dim_X2
