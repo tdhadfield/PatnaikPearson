@@ -61,6 +61,8 @@ from .helper import calculate_nu_over_d_given_alpha
 from .helper import calculate_alpha_given_nu_over_d
 from .helper import get_alpha_vals_nu_over_d_vals
 from .helper import smooth_this_array
+from .helper import calculate_softmax_nu_over_d
+from .helper import softmax_f
 from .helper import calculate_softmax_alpha
 from .helper import get_alpha_vals_softmax_alpha_vals
 from .helper import attention_experiment_new
@@ -103,3 +105,4 @@ from .helper import normalisation_experiment
 from .helper import interpolation_experiment
 from .helper import softmax_experiment
 from .helper import pp_dim_AB_experiment
+from .helper import attention_experiment_nu_over_d
