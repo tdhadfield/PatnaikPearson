@@ -2097,6 +2097,22 @@ def smooth_this_array(input_array : np.ndarray,
 
   return smoothed_values_final
   
+def calculate_softmax_nu_over_d(nu_over_d : float) -> float:
+    # softmaxW = pp.row_wise_softmax(W / math.sqrt(d))
+    nu_over_d_softmax = nu_over_d + softmax_f(nu_over_d)   
+    return nu_over_d_softmax   
+    
+def softmax_f(x):
+    # the softmax diff approximation
+    a = 22.0
+    b = -250.0
+    c = 0.001
+    fx = a * (x - c) * math.exp(b * x)
+    return fx
+
+# Apply the function using np.vectorize
+this_vec_softmax_f = np.vectorize(softmax_f)
+  
 def calculate_softmax_alpha(alpha : float) -> float:
     
   # ** TO DO : use new alpha
@@ -3329,9 +3345,9 @@ def calculate_nu_alpha_d_analytic(alpha : float, d : int, warning=True) -> tuple
   default_nu_over_d = 0.0
 
   #s = 1.0 / (alpha - 1.0)
-  s = 1.0 / alpha
+  s = 1.0 / max(eps,alpha)
 
-  if alpha < 0.0:
+  if alpha < eps: #0.0:
     return default_nu, default_nu_over_d
 
   if abs(alpha - 2.0) < eps:
@@ -4488,6 +4504,241 @@ def pp_dim_AB_experiment(num_iterations : int = 10, size_scale : int = 500) -> d
 	}
 	
 	return results_dict
+    
+
+def attention_experiment_nu_over_d(N : int,
+                         d : int,
+                         nu_over_d_X : float,
+                         nu_over_d_K : float,
+                         nu_over_d_Q : float,
+                         nu_over_d_V : float,
+                         verbose : bool = False,
+                         uniform_draws : bool = False,
+                         use_pareto : bool = True,
+                         use_uniform : bool = False,
+                         use_cauchy : bool = False,
+                         use_svd : bool = False
+                         ) -> dict:
+                             
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?                        
+
+  # N : number of datapoints (batch size)
+  # d : ambient (model) dimension
+  # alpha_X : tail exponent of data manifold X (N * d matrix)
+  # alpha_K : tail exponent of WK (d * d matrix)
+  # alpha_Q : tail exponent of WQ (d * d matrix)
+  # alpha_V : tail exponent of WV (d * d matrix)
+  
+  alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, d)
+  alpha_K = calculate_alpha_given_nu_over_d_and_d(nu_over_d_K, d)
+  alpha_Q = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Q, d)
+  alpha_V = calculate_alpha_given_nu_over_d_and_d(nu_over_d_V, d)
+
+  X = generate_data_manifold(N, d, alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+  WK = generate_square_weight_matrix(d, alpha_K, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+  WQ = generate_square_weight_matrix(d, alpha_Q, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+  WV = generate_square_weight_matrix(d, alpha_V, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+  
+  dim_X = X.shape[1]
+  dim_WK = WK.shape[1]
+  dim_WQ = WQ.shape[1]
+  dim_WV = WV.shape[1]
+
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  pp_dim_WK = calculate_PatnaikPearson_dim(WK)
+  pp_dim_WQ = calculate_PatnaikPearson_dim(WQ)
+  pp_dim_WV = calculate_PatnaikPearson_dim(WV)
+  
+  nu_over_d_X = pp_dim_X / dim_X
+  nu_over_d_WK = pp_dim_WK / dim_WK
+  nu_over_d_WQ = pp_dim_WQ / dim_WQ
+  nu_over_d_WV = pp_dim_WV / dim_WV
+
+  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+  implied_alpha_Q = calculate_alpha_given_nu_over_d_and_d(nu_over_d_WQ, dim_WQ)
+  implied_alpha_K = calculate_alpha_given_nu_over_d_and_d(nu_over_d_WK, dim_WK)
+  implied_alpha_V = calculate_alpha_given_nu_over_d_and_d(nu_over_d_WV, dim_WV)
+
+  if verbose:
+    print("alpha_X = ", alpha_X, ", pp_dim_X = ", pp_dim_X, ", nu_over_d_X = ", nu_over_d_X, ", implied_alpha_X = ", implied_alpha_X)
+    print("alpha_K = ", alpha_K, ", pp_dim_WK = ", pp_dim_WK, ", nu_over_d_WK = ", nu_over_d_WK, ", implied_alpha_K = ", implied_alpha_K)
+    print("alpha_Q = ", alpha_Q, ", pp_dim_WQ = ", pp_dim_WQ, ", nu_over_d_WQ = ", nu_over_d_WQ, ", implied_alpha_Q = ", implied_alpha_Q)
+    print("alpha_V = ", alpha_V, ", pp_dim_WV = ", pp_dim_WV, ", nu_over_d_WV = ", nu_over_d_WV, ", implied_alpha_V = ", implied_alpha_V)
+	
+  XWK = np.zeros((X.shape[0], WK.shape[1]))
+  if use_gpu:
+    print("XWK : using GPU")
+    XWK = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WK)))
+  else:
+    XWK = X @ WK
+  dim_XWK = XWK.shape[1]
+  actual_pp_dim_XWK = calculate_PatnaikPearson_dim(XWK)
+  actual_nu_over_d_XWK = actual_pp_dim_XWK / dim_XWK
+  estimate_nu_over_d_XWK = estimate_product_nu_over_d(nu_over_d_X, dim_X, nu_over_d_WK, dim_WK)
+  pure_estimate_nu_over_d_XWK = estimate_product_nu_over_d(nu_over_d_X, d, nu_over_d_K, d)
+  print("pure_estimate_nu_over_d_XWK = ", pure_estimate_nu_over_d_XWK)
+  estimate_pp_dim_XWK = dim_XWK * estimate_nu_over_d_XWK
+  actual_alpha_XWK = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_XWK, dim_XWK)
+  estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
+  
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WK = ", pp_dim_WK, ", actual_pp_dim_XWK = ", actual_pp_dim_XWK, ", estimate_pp_dim_XWK = ", estimate_pp_dim_XWK)
+    print("actual_nu_over_d_XWK = ", actual_nu_over_d_XWK, ", estimate_nu_over_d_XWK = ", estimate_nu_over_d_XWK)
+    print("actual_alpha_XWK = ", actual_alpha_XWK, ", estimate_alpha_XWK = ", estimate_alpha_XWK)
+
+  XWQ = np.zeros((X.shape[0], WQ.shape[1]))
+  if use_gpu:
+    print("XWQ : using GPU")
+    XWQ = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WQ)))
+  else:
+    XWQ = X @ WQ
+  dim_XWQ = XWQ.shape[1]
+  actual_pp_dim_XWQ = calculate_PatnaikPearson_dim(XWQ)
+  actual_nu_over_d_XWQ = actual_pp_dim_XWQ / dim_XWQ
+  estimate_nu_over_d_XWQ = estimate_product_nu_over_d(nu_over_d_X, dim_X, nu_over_d_WQ, dim_WQ)
+  pure_estimate_nu_over_d_XWQ = estimate_product_nu_over_d(nu_over_d_X, d, nu_over_d_Q, d)
+  estimate_pp_dim_XWQ = dim_XWQ * estimate_nu_over_d_XWQ
+  actual_alpha_XWQ = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_XWQ, dim_XWQ)
+  estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
+  
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WQ = ", pp_dim_WQ, ", actual_pp_dim_XWQ = ", actual_pp_dim_XWQ, ", estimate_pp_dim_XWQ = ", estimate_pp_dim_XWQ)
+    print("actual_nu_over_d_XWQ = ", actual_nu_over_d_XWQ, ", estimate_nu_over_d_XWQ = ", estimate_nu_over_d_XWQ)
+    print("pure_estimate_nu_over_d_XWQ = ", pure_estimate_nu_over_d_XWQ)
+    print("actual_alpha_XWQ = ", actual_alpha_XWQ, ", estimate_alpha_XWQ = ", estimate_alpha_XWQ)
+
+  XWV = np.zeros((X.shape[0], WV.shape[1]))
+  if use_gpu:
+    print("XWV : using GPU")
+    XWV = cp.asnumpy(cp.matmul(cp.array(X), cp.array(WV)))
+  else:
+    XWV = X @ WV
+  dim_XWV = XWV.shape[1]
+  actual_pp_dim_XWV = calculate_PatnaikPearson_dim(XWV)
+  actual_nu_over_d_XWV = actual_pp_dim_XWV / dim_XWV
+  estimate_nu_over_d_XWV = estimate_product_nu_over_d(nu_over_d_X, d, nu_over_d_WV, dim_WV)
+  pure_estimate_nu_over_d_XWV = estimate_product_nu_over_d(nu_over_d_X, d, nu_over_d_V, d)
+  estimate_pp_dim_XWV = dim_XWV * estimate_nu_over_d_XWV
+  actual_alpha_XWV = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_XWV, dim_XWV)
+  estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
+  
+  if verbose:
+    print("pp_dim_X = ", pp_dim_X, ", pp_dim_WV = ", pp_dim_WV, ", actual_pp_dim_XWV = ", actual_pp_dim_XWV, ", estimate_pp_dim_XWV = ", estimate_pp_dim_XWV)
+    print("actual_nu_over_d_XWV = ", actual_nu_over_d_XWV, ", estimate_nu_over_d_XWV = ", estimate_nu_over_d_XWV)
+    print("pure_estimate_nu_over_d_XWV = ", pure_estimate_nu_over_d_XWV)
+    print("actual_alpha_XWV = ", actual_alpha_XWV, ", estimate_alpha_XWV = ", estimate_alpha_XWV)
+
+  XWKT = XWK.T
+  dim_XWKT = XWKT.shape[1]
+  actual_pp_dim_XWKT = calculate_PatnaikPearson_dim(XWKT)
+  actual_nu_over_d_XWKT = actual_pp_dim_XWKT / dim_XWKT
+  #pure_estimate_nu_over_d_XWKT = (d / N) * pure_estimate_nu_over_d_XWK
+  pure_estimate_nu_over_d_XWKT = estimate_product_nu_over_d(nu_over_d_K, d, (d/N) * nu_over_d_X, N) # XT is (d,N)
+  
+  QKT = np.zeros((XWQ.shape[0], XWKT.shape[1]))
+  if use_gpu:
+    print("QKT : using GPU")
+    QKT = cp.asnumpy(cp.matmul(cp.array(XWQ), cp.array(XWKT)))
+  else:
+    QKT = XWQ @ XWKT
+  dim_QKT = QKT.shape[1]
+  actual_pp_dim_QKT = calculate_PatnaikPearson_dim(QKT)
+  actual_nu_over_d_QKT = actual_pp_dim_QKT / dim_QKT
+  
+  estimate_nu_over_d_QKT = estimate_product_nu_over_d(actual_nu_over_d_XWQ, dim_XWQ, actual_nu_over_d_XWKT, dim_XWKT)
+  pure_estimate_nu_over_d_QKT = estimate_product_nu_over_d(pure_estimate_nu_over_d_XWQ, d, pure_estimate_nu_over_d_XWKT, N)
+  estimate_pp_dim_QKT = dim_QKT * estimate_nu_over_d_QKT
+  actual_alpha_QKT = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_QKT, dim_QKT)
+  estimate_alpha_QKT = estimate_product_alpha(implied_alpha_Q, dim_WQ, implied_alpha_K, dim_WK)
+  
+  if verbose:
+    print("pp_dim_WQ = ", pp_dim_WQ, ", pp_dim_WK = ", pp_dim_WK, "actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", estimate_pp_dim_QKT = ", estimate_pp_dim_QKT)
+    print("actual_nu_over_d_QKT = ", actual_nu_over_d_QKT, ", estimate_nu_over_d_QKT = ", estimate_nu_over_d_QKT)
+    print("pure_estimate_nu_over_d_QKT = ", pure_estimate_nu_over_d_QKT)
+    print("alpha_Q = ", alpha_Q, ", alpha_K = ", alpha_K, ", actual_alpha_QKT = ", actual_alpha_QKT, "estimate_alpha_QKT = ", estimate_alpha_QKT)
+
+  QKTrescaled = QKT / np.sqrt(d)
+  dim_QKTrescaled = QKTrescaled.shape[1]
+  actual_pp_dim_QKTrescaled = calculate_PatnaikPearson_dim(QKTrescaled)
+  actual_nu_over_d_QKTrescaled =  actual_pp_dim_QKTrescaled / dim_QKTrescaled
+  actual_alpha_QKTrescaled = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_QKTrescaled, dim_QKTrescaled)
+  
+  if verbose:
+    print("actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
+    print("actual_nu_over_d_QKTrescaled = ", actual_nu_over_d_QKTrescaled)
+    print("actual_alpha_QKT = ", actual_alpha_QKT, ",actual_alpha_QKTrescaled = ", actual_alpha_QKTrescaled)
+
+  AttnQK = row_wise_softmax(QKTrescaled)
+  dim_AttnQK = AttnQK.shape[1]
+  actual_pp_dim_AttnQK = calculate_PatnaikPearson_dim(AttnQK)
+  actual_nu_over_d_AttnQK = actual_pp_dim_AttnQK  / dim_AttnQK
+  estimate_nu_over_d_AttnQK = calculate_softmax_nu_over_d(actual_nu_over_d_QKT)  # not rescaled
+  if verbose:
+      print("softmax test : actual_nu_over_d_QKT = ", actual_nu_over_d_QKT)
+      print("softmax test : estimate_nu_over_d_AttnQK = ", estimate_nu_over_d_AttnQK)
+  pure_estimate_nu_over_d_AttnQK = calculate_softmax_nu_over_d(pure_estimate_nu_over_d_QKT) # not rescaled  
+  actual_alpha_AttnQK = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_AttnQK, dim_AttnQK)
+  estimate_alpha_AttnQK = calculate_softmax_alpha(actual_alpha_QKTrescaled)
+  
+  if verbose:
+    print("sanity check : N = ", N, ", AttnQK.sum() = ", AttnQK.sum())
+    print("actual_pp_dim_AttnQK = ", actual_pp_dim_AttnQK, ", actual_pp_dim_QKT = ", actual_pp_dim_QKT, ", actual_pp_dim_QKTrescaled = ", actual_pp_dim_QKTrescaled)
+    print("actual_nu_over_d_AttnQK = ", actual_nu_over_d_AttnQK) 
+    print("estimate_nu_over_d_AttnQK = ", estimate_nu_over_d_AttnQK)
+    print("pure_estimate_nu_over_d_AttnQK = ", pure_estimate_nu_over_d_AttnQK)
+    print("actual_alpha_AttnQK = ", actual_alpha_AttnQK, ", estimate_alpha_AttnQK = ", estimate_alpha_AttnQK)
+
+  estimate_pp_dim_AttnQK = dim_AttnQK * estimate_nu_over_d_AttnQK
+
+  AttnQKV = np.zeros((AttnQK.shape[0], XWV.shape[1]))
+  if use_gpu:
+    print("AttnQKV : using GPU")
+    AttnQKV = cp.asnumpy(cp.matmul(cp.array(AttnQK), cp.array(XWV)))
+  else:
+    AttnQKV = AttnQK @ XWV
+  dim_AttnQKV = AttnQKV.shape[1]
+
+  actual_pp_dim_AttnQKV = (calculate_PatnaikPearson_dim(AttnQKV)).astype(float)
+  actual_nu_over_d_AttnQKV = actual_pp_dim_AttnQKV / dim_AttnQKV
+  actual_alpha_AttnQKV = calculate_alpha_given_nu_over_d_and_d(actual_nu_over_d_AttnQKV, dim_AttnQKV)
+
+  estimate_alpha_XWQ = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_Q, dim_WQ)
+  estimate_alpha_XWK = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_K, dim_WK)
+  estimate_alpha_QKT = estimate_product_alpha(estimate_alpha_XWQ, dim_XWQ, estimate_alpha_XWK, dim_XWK)
+  estimate_alpha_softmax_QKT = calculate_softmax_alpha(estimate_alpha_QKT)
+  estimate_alpha_XWV = estimate_product_alpha(implied_alpha_X, dim_X, implied_alpha_V, dim_WV)
+  estimate_alpha_AttnQKV = estimate_product_alpha(estimate_alpha_softmax_QKT, dim_QKT, estimate_alpha_XWV, dim_XWV)
+  #estimate_nu_over_d_AttnQKV = calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+  estimate_nu_over_d_AttnQKV = estimate_product_nu_over_d(actual_nu_over_d_AttnQK, dim_AttnQK, actual_nu_over_d_XWV, dim_XWV) #calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+  if verbose:
+      print("pure_estimate_nu_over_d_AttnQK, N, pure_estimate_nu_over_d_XWV, d = ", pure_estimate_nu_over_d_AttnQK, N, pure_estimate_nu_over_d_XWV, d)
+  pure_estimate_nu_over_d_AttnQKV = estimate_product_nu_over_d(pure_estimate_nu_over_d_AttnQK, N, pure_estimate_nu_over_d_XWV, d)
+  
+  #calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
+  estimate_pp_dim_AttnQKV = dim_AttnQKV * estimate_nu_over_d_AttnQKV
+
+  if verbose:
+    print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV)
+    print("estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
+    print("actual_pp_dim_AttnQKV = ", actual_pp_dim_AttnQKV) 
+    print("estimate_pp_dim_AttnQKV = ", estimate_pp_dim_AttnQKV)
+    print("actual_nu_over_d_AttnQKV = ", actual_nu_over_d_AttnQKV) 
+    print("estimate_nu_over_d_AttnQKV = ", estimate_nu_over_d_AttnQKV)
+    print("pure_estimate_nu_over_d_AttnQKV = ", pure_estimate_nu_over_d_AttnQKV)
+    
+  results_dict = {
+    "dim_AttnQKV" : dim_AttnQKV,
+    "actual_pp_dim_AttnQKV" : actual_pp_dim_AttnQKV, 
+    "estimate_pp_dim_AttnQKV" :  estimate_pp_dim_AttnQKV,
+    "actual_alpha_AttnQKV" : actual_alpha_AttnQKV,
+    "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV,
+    "actual_nu_over_d_AttnQKV" : actual_nu_over_d_AttnQKV,
+    "estimate_nu_over_d_AttnQKV" : estimate_nu_over_d_AttnQKV,
+	"pure_estimate_nu_over_d_AttnQKV" : pure_estimate_nu_over_d_AttnQKV
+  }
+
+  return results_dict
         
         
 
