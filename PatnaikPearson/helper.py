@@ -4726,7 +4726,7 @@ def attention_experiment_nu_over_d(N : int,
   
   #calculate_nu_over_d_given_alpha_and_d(estimate_alpha_AttnQKV, dim_AttnQKV)
   estimate_pp_dim_AttnQKV = dim_AttnQKV * estimate_nu_over_d_AttnQKV
-
+  
   if verbose:
     print("actual_alpha_AttnQKV = ", actual_alpha_AttnQKV)
     print("estimate_alpha_AttnQKV = ", estimate_alpha_AttnQKV)
@@ -4736,6 +4736,25 @@ def attention_experiment_nu_over_d(N : int,
     print("estimate_nu_over_d_AttnQKV = ", estimate_nu_over_d_AttnQKV)
     print("pure_estimate_nu_over_d_AttnQKV = ", pure_estimate_nu_over_d_AttnQKV)
     
+  # new estimate
+  dim_WKT = dim_WK # since WK is d * d
+  nu_over_d_WKT = nu_over_d_WK # since WK is symmetric
+  new_estimate_nu_over_d_WQWKT = estimate_product_nu_over_d(nu_over_d_WQ, dim_WQ, nu_over_d_WKT, dim_WKT)
+  dim_WQWKT = d # since both WQ and WK are d * d 
+  new_estimate_nu_over_d_XTX = estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X(nu_over_d_X, dim_X)
+  dim_XTX = d 
+  new_estimate_nu_over_d_WQWKTXTX = estimate_product_nu_over_d(new_estimate_nu_over_d_WQWKT, dim_WQWKT, new_estimate_nu_over_d_XTX, dim_XTX)
+  dim_WQWKTXTX = d
+  new_estimate_nu_over_d_XWQWKTXTX = estimate_product_nu_over_d(nu_over_d_X, dim_X, new_estimate_nu_over_d_WQWKTXTX, dim_WQWKTXTX)
+  dim_XWQWKTXTX = dim_WQWKTXTX
+  new_estimate_nu_over_d_softmaxXWQWKTXTX = calculate_softmax_nu_over_d(new_estimate_nu_over_d_XWQWKTXTX)
+  dim_softmaxXWQWKTXTX = dim_XWQWKTXTX
+  new_estimate_nu_over_d_softmaxXWQWKTXTX_WV = estimate_product_nu_over_d(new_estimate_nu_over_d_softmaxXWQWKTXTX, dim_softmaxXWQWKTXTX, nu_over_d_WV, dim_WV)
+  new_estimate_nu_over_d_AttnQKV = new_estimate_nu_over_d_softmaxXWQWKTXTX_WV
+  
+  if verbose:
+      print("new_estimate_nu_over_d_AttnQKV = ", new_estimate_nu_over_d_AttnQKV)
+      
   results_dict = {
     "dim_AttnQKV" : dim_AttnQKV,
     "actual_pp_dim_AttnQKV" : actual_pp_dim_AttnQKV, 
@@ -4744,7 +4763,8 @@ def attention_experiment_nu_over_d(N : int,
     "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV,
     "actual_nu_over_d_AttnQKV" : actual_nu_over_d_AttnQKV,
     "estimate_nu_over_d_AttnQKV" : estimate_nu_over_d_AttnQKV,
-	"pure_estimate_nu_over_d_AttnQKV" : pure_estimate_nu_over_d_AttnQKV
+	"pure_estimate_nu_over_d_AttnQKV" : pure_estimate_nu_over_d_AttnQKV,
+    "new_estimate_nu_over_d_AttnQKV" : new_estimate_nu_over_d_AttnQKV
   }
 
   return results_dict
@@ -4854,6 +4874,7 @@ def estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X(nu_over_d_X : float, dim_X : 
   # estimate nu/d for XTX
   implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
   implied_alpha_XTX = 0.5 * implied_alpha_X   
+  dim_XTX = dim_X # X is N * d, so XTX is d * d, and dim_X = d
   initial_estimate_nu_over_d_XTX = calculate_nu_over_d_given_alpha_and_d(implied_alpha_XTX , dim_XTX)
   adjustment_factor = 1.0 + (1.25 * nu_over_d_X)**3
   final_estimate_nu_over_d_XTX = initial_estimate_nu_over_d_XTX * adjustment_factor
