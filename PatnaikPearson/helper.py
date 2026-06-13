@@ -1513,19 +1513,21 @@ def calculate_nu_twonn_dim(
   
 def calculate_PatnaikPearson_dim(
 	input_data : np.ndarray,
-	verbose : bool = False
-	) -> float:
+	verbose : bool = False,
+    also_return_S : bool = False
+	) -> tuple: #float:
         
   if use_gpu:
-      return calculate_PatnaikPearson_dim_gpu(input_data, verbose)
+      return calculate_PatnaikPearson_dim_gpu(input_data, verbose, also_return_S)
   else:
-      return calculate_PatnaikPearson_dim_cpu(input_data, verbose)
+      return calculate_PatnaikPearson_dim_cpu(input_data, verbose, also_return_S)
       
   
 def calculate_PatnaikPearson_dim_cpu(
 	input_data : np.ndarray,
-	verbose : bool = False
-	) -> float:
+	verbose : bool = False,
+    also_return_S : bool = False
+	) -> tuple: #float:
         
   if verbose:
     print("reached calculate_PatnaikPearson_dim_cpu")
@@ -1570,13 +1572,17 @@ def calculate_PatnaikPearson_dim_cpu(
   if verbose:
     print("patnaik_pearson_dim = ", patnaik_pearson_dim)
 
-  return patnaik_pearson_dim
+  if also_return_S:
+    return patnaik_pearson_dim, S
+  else:
+    return patnaik_pearson_dim
   
   
 def calculate_PatnaikPearson_dim_gpu(
 	input_data : np.ndarray,
-	verbose : bool = False
-	) -> float:
+	verbose : bool = False,
+    also_return_S : bool = False
+	) -> tuple: #float:
         
   if verbose:
       print("reached calculate_PatnaikPearson_dim_gpu")
@@ -1623,7 +1629,10 @@ def calculate_PatnaikPearson_dim_gpu(
   if verbose:
     print("patnaik_pearson_dim = ", patnaik_pearson_dim)
 
-  return patnaik_pearson_dim
+  if also_return_S:
+    return patnaik_pearson_dim, S
+  else:
+    return patnaik_pearson_dim
   
   
 def calculate_PatnaikPearson_dim_for_MP(d : int, 
@@ -4739,7 +4748,114 @@ def attention_experiment_nu_over_d(N : int,
   }
 
   return results_dict
-        
-        
+  
 
+def calculate_pp_dim_X_pp_dim_XTX(N : int,
+                        d : int,
+                        nu_over_d : float,
+                        uniform_draws : bool = False,
+                        verbose : bool = False,
+                        force_cpu : bool = False
+                        ) -> dict:
+                            
+  # uses correct alpha
+  # ** TO DO : adapt to GPU?  
+  
+  alpha = calculate_alpha_given_nu_over_d_and_d(nu_over_d, d)
+
+  these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
+  nu_Sigma = calculate_nu(these_sigmas)
+  nu_Sigma_over_d = nu_Sigma / d
+  nu_Sigma_squared = calculate_nu_s(2.0, these_sigmas)
+  nu_Sigma_squared_over_d = nu_Sigma_squared / d
+
+  diag_sigmas = np.diag(these_sigmas)
+  X0 = np.random.normal(0, 1, (N, d))
+  QN = generate_orthogonal_matrix(N)
+  Qd = generate_orthogonal_matrix(d)
+  
+  pp_dim_X = 0.0 
+  nu_over_d_X = 0.0
+  pp_dim_XT = 0.0 
+  nu_over_d_XT = 0.0
+  pp_dim_XTX = 0.0 
+  nu_over_d_XTX = 0.0
+  
+  if use_gpu and not force_cpu:
+    print(" ** calculate_pp_dim_X_pp_dim_XTX : using GPU **")
     
+    cp_X1 = cp.matmul(cp.array(X0), cp.array(diag_sigmas))
+    cp_X = cp.matmul(cp.matmul(cp.array(QN),cp_X1), cp.array(Qd))
+    dim_X = cp_X.shape[1]
+    pp_dim_X, S = calculate_PatnaikPearson_dim(cp.asnumpy(cp_X), also_return_S = True)
+    nu_over_d_X = pp_dim_X / dim_X
+    nu_S_over_d = calculate_nu(S) / d
+    nu_S_squared_over_d = calculate_nu(S**2) / d
+    
+    cp_XT = cp_X.T
+    dim_XT = cp_XT.shape[1]
+    pp_dim_XT = calculate_PatnaikPearson_dim(cp.asnumpy(cp_XT))
+    nu_over_d_XT = pp_dim_XT / dim_XT
+     
+    cp_XTX = cp.matmul(cp_X.T, cp_X)
+    dim_XTX = cp_XTX.shape[1]
+    pp_dim_XTX = calculate_PatnaikPearson_dim(cp.asnumpy(cp_XTX))
+    nu_over_d_XTX = pp_dim_XTX / dim_XTX
+    
+  else:
+    print(" ** calculate_pp_dim_X_pp_dim_XTX : using CPU **")
+    X1 = X0 @ diag_sigmas
+    X = QN @ X1 @ Qd
+    dim_X = X.shape[1]
+    pp_dim_X = calculate_PatnaikPearson_dim(X)
+    nu_over_d_X = pp_dim_X / dim_X
+    
+    XT = X.T
+    dim_XT = XT.shape[1]
+    pp_dim_XT = calculate_PatnaikPearson_dim(XT)
+    nu_over_d_XT = pp_dim_XT / dim_XT  
+    
+    XTX = X.T @ X
+    dim_XTX = XTX.shape[1]
+    pp_dim_XTX = calculate_PatnaikPearson_dim(XTX)
+    nu_over_d_XTX = pp_dim_XTX / dim_XTX
+
+  # estimate nu/d for XTX
+  #implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+  #implied_alpha_XTX = 0.5 * implied_alpha_X   
+  #estimate_nu_over_d_XTX = calculate_nu_over_d_given_alpha_and_d(implied_alpha_XTX , dim_XTX)
+  #adjustment_factor = 1.0 + (1.25 * nu_over_d_X)**3
+  #new_estimate_nu_over_d_XTX = estimate_nu_over_d_XTX * adjustment_factor
+  
+  new_estimate_nu_over_d_XTX = estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X(nu_over_d_X, dim_X)
+  
+  nu_over_d_XT_times_nu_over_d_X = nu_over_d_XT * nu_over_d_X
+
+  results_dict = { 
+    "nu_Sigma" : nu_Sigma, 
+    "nu_Sigma_over_d" : nu_Sigma_over_d,  
+    "nu_Sigma_squared" : nu_Sigma_squared,    
+    "nu_Sigma_squared_over_d" : nu_Sigma_squared_over_d,
+    "nu_S_over_d" : nu_S_over_d,
+    "nu_S_squared_over_d" : nu_S_squared_over_d,
+    "pp_dim_X" : pp_dim_X,
+    "nu_over_d_X" : nu_over_d_X,	
+    "pp_dim_XTX" : pp_dim_XTX,
+    "nu_over_d_XTX" : nu_over_d_XTX,
+    "estimate_nu_over_d_XTX" : estimate_nu_over_d_XTX,
+    "nu_over_d_XT_times_nu_over_d_X" : nu_over_d_XT_times_nu_over_d_X,
+    "new_estimate_nu_over_d_XTX" : new_estimate_nu_over_d_XTX
+    }
+    
+  return results_dict
+  
+def estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X(nu_over_d_X : float, dim_X : int) -> float:
+    
+  # estimate nu/d for XTX
+  implied_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+  implied_alpha_XTX = 0.5 * implied_alpha_X   
+  initial_estimate_nu_over_d_XTX = calculate_nu_over_d_given_alpha_and_d(implied_alpha_XTX , dim_XTX)
+  adjustment_factor = 1.0 + (1.25 * nu_over_d_X)**3
+  final_estimate_nu_over_d_XTX = initial_estimate_nu_over_d_XTX * adjustment_factor
+  
+  return final_estimate_nu_over_d_XTX
