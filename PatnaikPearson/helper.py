@@ -1316,6 +1316,7 @@ def generate_data_manifold(N : int,
 
   these_sigmas = np.zeros(d)
   if use_pareto:
+    print("generate_pareto_draws : alpha = ", alpha)
     these_sigmas = generate_pareto_draws(d, alpha, uniform_draws)
     if verbose:
         print("using pareto")
@@ -1416,10 +1417,14 @@ def inv_pareto_cdf(alpha : float,
                 
     # now uses correct value of alpha 
     
-    eps = 1e-6
+    eps = 1e-4
     #this_exponent = 1.0 /(alpha - 1.0) # OLD
-    this_exponent = 1.0 /alpha # NEW
+    this_exponent = 1.0 / max(eps,alpha) # NEW
     one_over_one_minus_y = 1.0 / max(eps,1.0 - max(eps,y))
+    #print("alpha = ", alpha)
+    #print("y = ", y)
+    #print("this_exponent = ", this_exponent)
+    #print("one_over_one_minus_y = ", one_over_one_minus_y)
     return one_over_one_minus_y ** this_exponent
 
 # Apply the function using np.vectorize
@@ -3662,13 +3667,13 @@ def addition_experiment(N : int,
   use_cauchy = False
   verbose = False
                            
-  X1 = generate_data_manifold(N, d, alpha_X1, uniform_draws, use_pareto, use_cauchy, verbose, use_svd)
+  X1 = generate_data_manifold(N, d, alpha_X1, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
   dim_X1 = X1.shape[1]
   pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
   nu_over_d_X1 = pp_dim_X1 / dim_X1
   actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
 
-  X2 = generate_data_manifold(N, d, alpha_X2, uniform_draws, use_pareto, use_cauchy, verbose, use_svd)
+  X2 = generate_data_manifold(N, d, alpha_X2, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
   dim_X2 = X2.shape[1]
   pp_dim_X2 = calculate_PatnaikPearson_dim(X2)
   nu_over_d_X2 = pp_dim_X2 / dim_X2
@@ -4880,3 +4885,58 @@ def estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X(nu_over_d_X : float, dim_X : 
   final_estimate_nu_over_d_XTX = initial_estimate_nu_over_d_XTX * adjustment_factor
   
   return final_estimate_nu_over_d_XTX
+  
+
+def normalisation_experiment_nu_over_d(N : int,
+                            d : int,
+                            nu_over_d : float,
+                            uniform_draws : bool = False,
+                            use_pareto : bool = True,
+                            use_uniform : bool = False,
+                            use_cauchy : bool = False,
+                            verbose : bool = False,
+                            use_svd : bool = False
+                            ) -> dict:
+
+  initial_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d, d)
+  min_alpha = 0.01
+  initial_alpha_X = max(initial_alpha_X, min_alpha)
+  print("initial_alpha_X = ", initial_alpha_X)
+
+  X = generate_data_manifold(N, d, initial_alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+  dim_X = X.shape[1]
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  nu_over_d_X = pp_dim_X / dim_X
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+
+  eps = 1e-6
+  num_rows = X.shape[0]
+  Xnormalised = np.zeros(X.shape)
+  for row_num in range(0,num_rows):
+    this_row_vector = X[row_num,:]
+    this_row_vector_demeaned = this_row_vector - this_row_vector.mean()
+    this_norm_squared = (this_row_vector_demeaned**2).sum()
+    this_normalisation_factor = 1.0 / math.sqrt(this_norm_squared + eps)
+    this_row_vector_normalised = this_row_vector_demeaned * this_normalisation_factor
+    Xnormalised[row_num,:] = this_row_vector_normalised
+
+  pp_dim_Xnormalised = calculate_PatnaikPearson_dim(Xnormalised)
+  dim_Xnormalised = Xnormalised.shape[1]
+  nu_over_d_Xnormalised = pp_dim_Xnormalised / dim_Xnormalised
+  actual_alpha_Xnormalised = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xnormalised, dim_Xnormalised)
+  
+  results_dict = {
+	"nu_over_d" : nu_over_d,
+    "N" : N,
+	"d" : d,
+    "pp_dim_X" : pp_dim_X,
+    "nu_over_d_X" : nu_over_d_X,
+	"initial_alpha_X" : initial_alpha_X,
+    "actual_alpha_X" : actual_alpha_X,
+    "pp_dim_Xnormalised" : pp_dim_Xnormalised, 
+    "nu_over_d_Xnormalised" : nu_over_d_Xnormalised,
+    "actual_alpha_Xnormalised" : actual_alpha_Xnormalised
+  }
+  
+  return results_dict
+  
