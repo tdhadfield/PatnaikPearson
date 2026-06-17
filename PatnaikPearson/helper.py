@@ -4423,7 +4423,13 @@ def softmax_experiment(	N : int,
 	return results_dict
     
 
-def pp_dim_AB_experiment(num_iterations : int = 10, size_scale : int = 500) -> dict:
+def pp_dim_AB_experiment(num_iterations : int = 10, 
+                        size_scale : int = 500,
+                        override_N_d_m : bool = False,
+                        override_N : int = 0,
+                        override_d : int = 0,
+                        override_m : int = 0
+                        ) -> dict:
 
 	these_alphas = np.arange(0.1, 5.15, 0.05) # 100
 
@@ -4453,6 +4459,10 @@ def pp_dim_AB_experiment(num_iterations : int = 10, size_scale : int = 500) -> d
 		N = int(size_scale * ( 1 + np.random.uniform(0,1)))
 		d = N + int(size_scale * (np.random.uniform(0,1) - 0.5))
 		m = d + int(size_scale * np.random.uniform(0,1))
+		if override_N_d_m:
+			N = override_N
+			d = override_d
+			m = override_m
 		print(i, N, d, m)
 
 		alpha_1 = random.choice(these_alphas)
@@ -4936,6 +4946,52 @@ def normalisation_experiment_nu_over_d(N : int,
     "pp_dim_Xnormalised" : pp_dim_Xnormalised, 
     "nu_over_d_Xnormalised" : nu_over_d_Xnormalised,
     "actual_alpha_Xnormalised" : actual_alpha_Xnormalised
+  }
+  
+  return results_dict
+  
+
+def transpose_experiment_nu_over_d(N : int,
+                            d : int,
+                            nu_over_d : float,
+                            uniform_draws : bool = False,
+                            use_pareto : bool = True,
+                            use_uniform : bool = False,
+                            use_cauchy : bool = False,
+                            verbose : bool = False,
+                            use_svd : bool = False
+                            ) -> dict:
+
+  initial_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d, d)
+  min_alpha = 0.01
+  initial_alpha_X = max(initial_alpha_X, min_alpha)
+  print("initial_alpha_X = ", initial_alpha_X)
+
+  X = generate_data_manifold(N, d, initial_alpha_X, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+  dim_X = X.shape[1]
+  pp_dim_X = calculate_PatnaikPearson_dim(X)
+  nu_over_d_X = pp_dim_X / dim_X
+  actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+  
+  XT = X.T
+  dim_XT = XT.shape[1]
+  pp_dim_XT = calculate_PatnaikPearson_dim(XT)
+  nu_over_d_XT = pp_dim_XT / dim_XT
+  actual_alpha_XT = calculate_alpha_given_nu_over_d_and_d(nu_over_d_XT, dim_XT)
+  
+  results_dict = {
+	"nu_over_d" : nu_over_d,
+    "N" : N,
+	"d" : d,
+    "dim_X" : dim_X,
+    "pp_dim_X" : pp_dim_X,
+    "nu_over_d_X" : nu_over_d_X,
+	"initial_alpha_X" : initial_alpha_X,
+    "actual_alpha_X" : actual_alpha_X,
+    "dim_XT" : dim_XT,
+    "pp_dim_XT" : pp_dim_XT, 
+    "nu_over_d_XT" : nu_over_d_XT,
+    "actual_alpha_XT" : actual_alpha_XT
   }
   
   return results_dict

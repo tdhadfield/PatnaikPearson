@@ -109,3 +109,4 @@ from .helper import attention_experiment_nu_over_d
 from .helper import calculate_pp_dim_X_pp_dim_XTX
 from .helper import estimate_nu_over_d_XTX_given_nu_over_d_X_dim_X
 from .helper import normalisation_experiment_nu_over_d
+from .helper import transpose_experiment_nu_over_d
