@@ -97,8 +97,6 @@ cp -r "$PROJECT_DIR" "$TMPDIR/"
 cd "$WORK_DIR"
 echo "Now in PWD=$(pwd)"
 ls -la
-ls -la scripts
-ls -la src
 
 
 
