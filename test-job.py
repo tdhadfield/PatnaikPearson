@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
 from sklearn.neighbors import NearestNeighbors
 from scipy.linalg import qr
 
