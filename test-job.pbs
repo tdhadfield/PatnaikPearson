@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -N dry-run
+#PBS -N test-job
 #PBS -l walltime=00:10:00
 #PBS -l select=1:ncpus=8:mem=24gb:ngpus=1:gpu_type=A100
 
@@ -7,10 +7,10 @@ set -eo pipefail
 
 PROJECT_DIR="$HOME/PatnaikPearson"
 WORK_DIR="$TMPDIR/PatnaikPearson"
-RESULT_FILE="dry_run_results.txt"
+RESULT_FILE="test_job_results.txt"
 RESULT_PATH="$TMPDIR/$RESULT_FILE"
 HOME_RESULT_PATH="$HOME/$RESULT_FILE"
-LOG_FIFO="$TMPDIR/dry_run_log_fifo.$$"
+LOG_FIFO="$TMPDIR/test_job_log_fifo.$$"
 
 : > "$RESULT_PATH"
 mkfifo "$LOG_FIFO"
