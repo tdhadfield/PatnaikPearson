@@ -5004,3 +5004,336 @@ def transpose_experiment_nu_over_d(N : int,
   
   return results_dict
   
+def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
+
+    d_vals = this_config["d_vals"] 
+    y_equals_AQBQt = this_config["y_equals_AQBQt"] 
+    y_equals_AQB = this_config["y_equals_AQB"]
+    y_equals_AQ = this_config["y_equals_AQ"]
+    A_diagonal = this_config["A_diagonal"]
+    B_diagonal = this_config["B_diagonal"]
+    A_pareto = this_config["A_pareto"]
+    A_pareto_alpha_vals = this_config["A_pareto_alpha_vals"]
+    A_cauchy = this_config["A_cauchy"]
+    A_uniform = this_config["A_uniform"]
+    B_pareto = this_config["B_pareto"]
+    B_pareto_beta_vals = this_config["B_pareto_beta_vals"]
+    B_cauchy = this_config["B_cauchy"]
+    B_uniform = this_config["B_uniform"]
+    verbose = this_config["verbose"]
+
+    print("verbose = ", verbose)
+
+    print(A_pareto_alpha_vals)
+    print(B_pareto_beta_vals)
+
+    num_vals = len(d_vals)
+
+    trace_S_vals = np.zeros(num_vals)
+    trace_Ssquared_vals = np.zeros(num_vals)
+    nu_psi_vals = np.zeros(num_vals)
+    nu_psi_over_d_vals = np.zeros(num_vals)
+    trace_Y_vals = np.zeros(num_vals)
+    trace_Ysquared_vals = np.zeros(num_vals)
+    trace_Y_all_squared_over_trace_Ysquared_vals = np.zeros(num_vals)
+    trace_Y_all_squared_over_trace_Ysquared_over_d_vals = np.zeros(num_vals)
+    trace_Y_over_trace_S_vals = np.zeros(num_vals)
+    trace_Ysquared_over_trace_Ssquared_vals = np.zeros(num_vals)
+
+    pp_dim_S_vals = np.zeros(num_vals)
+    pp_dim_Y_vals = np.zeros(num_vals)
+    pp_dim_A_vals = np.zeros(num_vals) 
+    pp_dim_B_vals = np.zeros(num_vals)
+
+    pp_dim_S_over_d_vals = np.zeros(num_vals) 
+    pp_dim_Y_over_d_vals = np.zeros(num_vals)
+    pp_dim_A_over_d_vals = np.zeros(num_vals)
+    pp_dim_B_over_d_vals = np.zeros(num_vals)
+
+    min_pp_dim_A_over_d_pp_dim_B_over_d_vals = np.zeros(num_vals) 
+    pp_dim_A_over_d_times_pp_dim_B_over_d_vals = np.zeros(num_vals) 
+
+    A_alpha = -1.0
+    B_beta = -1.0
+    i = 0
+    for this_d in d_vals:
+        d = int(this_d)
+        one_over_sqrt_d = 1.0 / math.sqrt(d)
+        if A_pareto:
+            A_alpha = A_pareto_alpha_vals[i]
+        if B_pareto:
+            B_beta = B_pareto_beta_vals[i]
+        #print(i, d, A_alpha, B_beta)
+
+        Y = one_over_sqrt_d * np.random.normal(0,1,(d,d))
+        A = np.identity(d)
+        B = np.identity(d)
+        Q = np.identity(d)
+        Qt = np.identity(d)
+        generate_A = y_equals_AQBQt or y_equals_AQB or y_equals_AQ
+        generate_B = y_equals_AQBQt or y_equals_AQB
+        generate_Q = y_equals_AQBQt or y_equals_AQB or y_equals_AQ
+        generate_Qt = y_equals_AQBQt
+    
+        if generate_A:
+            if verbose: print("generating A")
+            if A_diagonal:
+                if verbose: print("A is diagonal")
+                if A_pareto:
+                    if verbose: print("A is Pareto")
+                    lambda_A = pp.generate_pareto_draws(d,A_alpha)
+                    A = np.diag(lambda_A)
+                elif A_cauchy:
+                    if verbose: print("A is Cauchy")
+                    A = np.diag(np.abs(np.random.standard_cauchy(d)))
+                elif A_uniform:
+                    if verbose: print("A is uniform")
+                    A = np.diag(np.random.uniform(0,1,d))
+                else:
+                    if verbose: print("default : A is unchanged")
+            else:
+                if verbose: print("default : A is normal")
+                A = one_over_sqrt_d * np.random.normal(0,1,(d,d))
+            
+        if generate_B:
+            if verbose: print("generating B")
+            if B_diagonal:
+                if verbose: print("B is diagonal")
+                if B_pareto:
+                    if verbose: print("B is Pareto")
+                    phi_B = pp.generate_pareto_draws(d, B_beta)
+                    B = np.diag(phi_B)
+                elif B_cauchy:
+                    if verbose: print("B is Cauchy")
+                    B = np.diag(np.abs(np.random.standard_cauchy(d)))
+                elif B_uniform:
+                    if verbose: print("B is uniform")
+                    B = np.diag(np.random.uniform(0,1,d))
+                else:
+                    if verbose: print("default : B is unchanged")
+            else:
+                if verbose: print("default : B is normal")
+                B = one_over_sqrt_d * np.random.normal(0,1,(d,d))
+
+        if generate_Q:
+            Q = pp.generate_orthogonal_matrix(d)
+            if generate_Qt:
+                Qt = Q.T
+
+        if verbose:
+            print("A.shape = ", A.shape)
+            print("Q.shape = ", Q.shape)
+            print("B.shape = ", B.shape)
+            print("Qt.shape = ", Qt.shape)
+
+        # generate Y
+        Y = A @ (Q @ (B @ Qt))
+
+        # do SVD
+        U, S, Vh = np.linalg.svd(Y, full_matrices=True)
+
+        trace_S = sum(S) 
+        trace_Ssquared = sum(S*S) 
+        nu_psi = pp.calculate_nu(S)
+        trace_Y = np.trace(Y)
+        trace_Ysquared = np.trace(Y @ Y)
+
+        trace_Y_all_squared_over_trace_Ysquared = (trace_Y ** 2) / trace_Ysquared
+        trace_Y_over_trace_S = trace_Y / trace_S
+        trace_Ysquared_over_trace_Ssquared = trace_Ysquared / trace_Ssquared
+
+        pp_dim_S = pp.calculate_PatnaikPearson_dim(np.diag(S))
+        pp_dim_Y = pp.calculate_PatnaikPearson_dim(Y)
+        pp_dim_A = pp.calculate_PatnaikPearson_dim(A)
+        pp_dim_B = pp.calculate_PatnaikPearson_dim(B)
+
+        pp_dim_S_over_d = pp_dim_S / d
+        pp_dim_Y_over_d = pp_dim_Y / d
+        pp_dim_A_over_d = pp_dim_A / d
+        pp_dim_B_over_d = pp_dim_B / d
+
+        min_pp_dim_A_over_d_pp_dim_B_over_d = min(pp_dim_A_over_d, pp_dim_B_over_d)
+        pp_dim_A_over_d_times_pp_dim_B_over_d = pp_dim_A_over_d * pp_dim_B_over_d
+
+        trace_S_vals[i] = trace_S
+        trace_Ssquared_vals[i] = trace_Ssquared
+        nu_psi_vals[i] = nu_psi
+        nu_psi_over_d_vals[i] = (1.0 / d) * nu_psi
+        trace_Y_vals[i] = trace_Y
+        trace_Ysquared_vals[i] = trace_Ysquared
+        trace_Y_all_squared_over_trace_Ysquared_vals[i] = trace_Y_all_squared_over_trace_Ysquared
+        trace_Y_all_squared_over_trace_Ysquared_over_d_vals[i] = (1.0 / d) * trace_Y_all_squared_over_trace_Ysquared
+        trace_Y_over_trace_S_vals[i] = trace_Y_over_trace_S
+        trace_Ysquared_over_trace_Ssquared_vals[i] = trace_Ysquared_over_trace_Ssquared
+
+        pp_dim_S_vals[i] =  pp_dim_S
+        pp_dim_Y_vals[i] =  pp_dim_Y
+        pp_dim_A_vals[i] =  pp_dim_A
+        pp_dim_B_vals[i] =  pp_dim_B
+
+        pp_dim_S_over_d_vals[i] =  pp_dim_S_over_d
+        pp_dim_Y_over_d_vals[i] =  pp_dim_Y_over_d
+        pp_dim_A_over_d_vals[i] =  pp_dim_A_over_d
+        pp_dim_B_over_d_vals[i] =  pp_dim_B_over_d
+
+        min_pp_dim_A_over_d_pp_dim_B_over_d_vals[i] =  min_pp_dim_A_over_d_pp_dim_B_over_d
+        pp_dim_A_over_d_times_pp_dim_B_over_d_vals[i] =  pp_dim_A_over_d_times_pp_dim_B_over_d
+    
+        i +=1
+
+    results_dict = {
+        "d_vals" : d_vals,
+        "A_pareto_alpha_vals" : A_pareto_alpha_vals,
+        "B_pareto_beta_vals" : B_pareto_beta_vals,
+        "trace_S_vals" : trace_S_vals,
+        "trace_Ssquared_vals" : trace_Ssquared_vals,
+        "nu_psi_vals" : nu_psi_vals,
+        "nu_psi_over_d_vals" : nu_psi_over_d_vals,
+        "trace_Y_vals" : trace_Y_vals,
+        "trace_Ysquared_vals" : trace_Ysquared_vals,
+        "trace_Y_all_squared_over_trace_Ysquared_vals" : trace_Y_all_squared_over_trace_Ysquared_vals,
+        "trace_Y_all_squared_over_trace_Ysquared_over_d_vals" : trace_Y_all_squared_over_trace_Ysquared_over_d_vals,
+        "trace_Y_over_trace_S_vals" : trace_Y_over_trace_S_vals,
+        "trace_Ysquared_over_trace_Ssquared_vals" : trace_Ysquared_over_trace_Ssquared_vals,    
+        "pp_dim_S_vals" : pp_dim_S_vals,
+        "pp_dim_Y_vals" : pp_dim_Y_vals,
+        "pp_dim_A_vals" : pp_dim_A_vals,
+        "pp_dim_B_vals" : pp_dim_B_vals,
+        "pp_dim_S_over_d_vals" : pp_dim_S_over_d_vals,
+        "pp_dim_Y_over_d_vals" : pp_dim_Y_over_d_vals,
+        "pp_dim_A_over_d_vals" : pp_dim_A_over_d_vals,
+        "pp_dim_B_over_d_vals" : pp_dim_B_over_d_vals,
+        "min_pp_dim_A_over_d_pp_dim_B_over_d_vals" : min_pp_dim_A_over_d_pp_dim_B_over_d_vals,
+        "pp_dim_A_over_d_times_pp_dim_B_over_d_vals" : pp_dim_A_over_d_times_pp_dim_B_over_d_vals
+    }
+    return results_dict
+    
+def get_default_config() -> dict:
+    
+    # generate the default config for run_grand_unified_experiment_Y_eq_AQBQt
+
+    default_config = {}
+
+    default_config["d_vals"] = np.ones(1)
+    default_config["y_equals_AQBQt"] = False
+    default_config["y_equals_AQB"] = False
+    default_config["y_equals_AQ"] = False
+    default_config["A_diagonal"] = False
+    default_config["B_diagonal"] = False
+    default_config["A_pareto"] = False
+    default_config["A_pareto_alpha_vals"] = np.ones(1)
+    default_config["A_cauchy"] = False
+    default_config["A_uniform"] = False
+    default_config["B_pareto"] = False
+    default_config["B_pareto_beta_vals"] = np.ones(1)
+    default_config["B_cauchy"] = False
+    default_config["B_uniform"] = False
+    default_config["verbose"] = False
+
+    return default_config
+    
+def plot_one(results_dict : dict, prefix : str):
+    
+    # produce plots for run_grand_unified_experiment_Y_eq_AQBQt
+
+    d_vals = results_dict["d_vals"]
+    A_pareto_alpha_vals = results_dict["A_pareto_alpha_vals"]
+    B_pareto_beta_vals = results_dict["B_pareto_beta_vals"]
+    trace_S_vals = results_dict["trace_S_vals"]
+    trace_Ssquared_vals = results_dict["trace_Ssquared_vals"]
+    nu_psi_vals = results_dict["nu_psi_vals"]
+    nu_psi_over_d_vals = results_dict["nu_psi_over_d_vals"]
+    trace_Y_vals = results_dict["trace_Y_vals"]
+    trace_Ysquared_vals = results_dict["trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_over_d_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_over_d_vals"]
+    trace_Y_over_trace_S_vals = results_dict["trace_Y_over_trace_S_vals"]
+    trace_Ysquared_over_trace_Ssquared_vals = results_dict["trace_Ysquared_over_trace_Ssquared_vals"]    
+    pp_dim_S_vals = results_dict["pp_dim_S_vals"]
+    pp_dim_Y_vals = results_dict["pp_dim_Y_vals"]
+    pp_dim_A_vals = results_dict["pp_dim_A_vals"]
+    pp_dim_B_vals = results_dict["pp_dim_B_vals"]
+    pp_dim_S_over_d_vals = results_dict["pp_dim_S_over_d_vals"]
+    pp_dim_Y_over_d_vals = results_dict["pp_dim_Y_over_d_vals"]
+    pp_dim_A_over_d_vals = results_dict["pp_dim_A_over_d_vals"]
+    pp_dim_B_over_d_vals = results_dict["pp_dim_B_over_d_vals"]
+    min_pp_dim_A_over_d_pp_dim_B_over_d_vals = results_dict["min_pp_dim_A_over_d_pp_dim_B_over_d_vals"]
+    pp_dim_A_over_d_times_pp_dim_B_over_d_vals = results_dict["pp_dim_A_over_d_times_pp_dim_B_over_d_vals"]
+
+    generic_title = "\n " + str(min_d) + " <= d <= " + str(max_d) + ", num_vals = " + str(len(d_vals))
+
+    this_title = prefix + " : (1/d) * (Tr(Y)^2 / Tr(Y^2)) and (1/d) * nu(psi) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, trace_Y_all_squared_over_trace_Ysquared_over_d_vals, label = "(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    plt.scatter(d_vals, nu_psi_over_d_vals, label = "(1/d) * nu(psi)")
+    plt.xlabel("d")
+    plt.ylabel("(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : (Tr(Y)^2 / Tr(Y^2)) / nu(psi) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, trace_Y_all_squared_over_trace_Ysquared_vals / nu_psi_vals) #, label = "(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    #plt.scatter(d_vals, nu_psi_over_d_vals, label = "(1/d) * nu(psi)")
+    plt.xlabel("d")
+    plt.ylabel("values")
+    #plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : (1/d) * (Tr(Y)^2 / Tr(Y^2)) vs (1/d) * nu(psi) as d varies"
+    this_title += generic_title
+    plt.plot(trace_Y_all_squared_over_trace_Ysquared_over_d_vals, trace_Y_all_squared_over_trace_Ysquared_over_d_vals, 
+         color = "red", label = "(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_over_d_vals, nu_psi_over_d_vals, label = "(1/d) * nu(psi)")
+    plt.xlabel("(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    plt.ylabel("values")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : Tr(Y) / Tr(S) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, trace_Y_over_trace_S_vals, label = "Tr(Y) / Tr(S)")
+    plt.xlabel("d")
+    plt.ylabel("Tr(Y) / Tr(S)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : Tr(Y^2) / Tr(S^2) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, trace_Ysquared_over_trace_Ssquared_vals, label = "Tr(Y^2) / Tr(S^2)")
+    plt.xlabel("d")
+    plt.ylabel("Tr(Y^2) / Tr(S^2)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : Tr(Y) / Tr(S) vs Tr(Y^2) / Tr(S^2) as d varies"
+    this_title += generic_title
+    plt.plot(trace_Y_over_trace_S_vals, trace_Y_over_trace_S_vals, color = "red", label = "Tr(Y) / Tr(S)")
+    plt.scatter(trace_Y_over_trace_S_vals, trace_Ysquared_over_trace_Ssquared_vals, label = "Tr(Y^2) / Tr(S^2)")
+    plt.xlabel("Tr(Y) / Tr(S)")
+    plt.ylabel("values")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : (Tr(Y) / Tr(S)) / (Tr(Y^2) / Tr(S^2)) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, trace_Y_over_trace_S_vals / trace_Ysquared_over_trace_Ssquared_vals) 
+    plt.xlabel("d")
+    plt.ylabel("values")
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " : (Tr(Y) / Tr(S))^2 / (Tr(Y^2) / Tr(S^2)) as d varies"
+    this_title += generic_title
+    plt.scatter(d_vals, (trace_Y_over_trace_S_vals * trace_Y_over_trace_S_vals) / trace_Ysquared_over_trace_Ssquared_vals) 
+    plt.xlabel("d")
+    plt.ylabel("values")
+    plt.title(this_title)
+    plt.show()
+  
