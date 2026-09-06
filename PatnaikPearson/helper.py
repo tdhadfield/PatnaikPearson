@@ -5081,7 +5081,7 @@ def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
                 if verbose: print("A is diagonal")
                 if A_pareto:
                     if verbose: print("A is Pareto")
-                    lambda_A = pp.generate_pareto_draws(d,A_alpha)
+                    lambda_A = generate_pareto_draws(d,A_alpha)
                     A = np.diag(lambda_A)
                 elif A_cauchy:
                     if verbose: print("A is Cauchy")
@@ -5101,7 +5101,7 @@ def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
                 if verbose: print("B is diagonal")
                 if B_pareto:
                     if verbose: print("B is Pareto")
-                    phi_B = pp.generate_pareto_draws(d, B_beta)
+                    phi_B = generate_pareto_draws(d, B_beta)
                     B = np.diag(phi_B)
                 elif B_cauchy:
                     if verbose: print("B is Cauchy")
@@ -5116,7 +5116,7 @@ def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
                 B = one_over_sqrt_d * np.random.normal(0,1,(d,d))
 
         if generate_Q:
-            Q = pp.generate_orthogonal_matrix(d)
+            Q = generate_orthogonal_matrix(d)
             if generate_Qt:
                 Qt = Q.T
 
@@ -5134,7 +5134,7 @@ def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
 
         trace_S = sum(S) 
         trace_Ssquared = sum(S*S) 
-        nu_psi = pp.calculate_nu(S)
+        nu_psi = calculate_nu(S)
         trace_Y = np.trace(Y)
         trace_Ysquared = np.trace(Y @ Y)
 
@@ -5142,10 +5142,10 @@ def run_grand_unified_experiment_Y_eq_AQBQt(this_config : dict) -> dict:
         trace_Y_over_trace_S = trace_Y / trace_S
         trace_Ysquared_over_trace_Ssquared = trace_Ysquared / trace_Ssquared
 
-        pp_dim_S = pp.calculate_PatnaikPearson_dim(np.diag(S))
-        pp_dim_Y = pp.calculate_PatnaikPearson_dim(Y)
-        pp_dim_A = pp.calculate_PatnaikPearson_dim(A)
-        pp_dim_B = pp.calculate_PatnaikPearson_dim(B)
+        pp_dim_S = calculate_PatnaikPearson_dim(np.diag(S))
+        pp_dim_Y = calculate_PatnaikPearson_dim(Y)
+        pp_dim_A = calculate_PatnaikPearson_dim(A)
+        pp_dim_B = calculate_PatnaikPearson_dim(B)
 
         pp_dim_S_over_d = pp_dim_S / d
         pp_dim_Y_over_d = pp_dim_Y / d
@@ -5259,7 +5259,9 @@ def plot_one(results_dict : dict, prefix : str):
     pp_dim_B_over_d_vals = results_dict["pp_dim_B_over_d_vals"]
     min_pp_dim_A_over_d_pp_dim_B_over_d_vals = results_dict["min_pp_dim_A_over_d_pp_dim_B_over_d_vals"]
     pp_dim_A_over_d_times_pp_dim_B_over_d_vals = results_dict["pp_dim_A_over_d_times_pp_dim_B_over_d_vals"]
-
+    
+    min_d = int(np.min(d_vals))
+    max_d = int(np.max(d_vals))
     generic_title = "\n " + str(min_d) + " <= d <= " + str(max_d) + ", num_vals = " + str(len(d_vals))
 
     this_title = prefix + " : (1/d) * (Tr(Y)^2 / Tr(Y^2)) and (1/d) * nu(psi) as d varies"
