@@ -4428,17 +4428,16 @@ def pp_dim_AB_experiment(num_iterations : int = 10,
                         override_N_d_m : bool = False,
                         override_N : int = 0,
                         override_d : int = 0,
-                        override_m : int = 0
+                        override_m : int = 0,
+                        uniform_draws : bool = True,
+                        use_pareto : bool = True,
+                        use_uniform : bool = False,
+                        use_cauchy : bool = False,
+                        verbose : bool = False,
+                        use_svd : bool = True
                         ) -> dict:
 
 	these_alphas = np.arange(0.1, 5.15, 0.05) # 100
-
-	uniform_draws = True
-	use_pareto = True
-	use_uniform = False
-	use_cauchy = False
-	verbose = False
-	use_svd = True
 
 	pp_dim_A_vals = np.zeros(num_iterations)
 	pp_dim_B_vals = np.zeros(num_iterations)
@@ -4453,12 +4452,15 @@ def pp_dim_AB_experiment(num_iterations : int = 10,
 	min_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
 	max_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
 	nu_over_d_A_times_nu_over_d_B_vals = np.zeros(num_iterations)
+    
+	nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals  = np.zeros(num_iterations)
+	min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals = np.zeros(num_iterations)
 
 	for i in range(num_iterations):
-
-		N = int(size_scale * ( 1 + np.random.uniform(0,1)))
-		d = N + int(size_scale * (np.random.uniform(0,1) - 0.5))
-		m = d + int(size_scale * np.random.uniform(0,1))
+        # we want N >= d >= m
+		m = int(size_scale * ( 1 + np.random.uniform(0,1)))
+		d = m + int(size_scale * (np.random.uniform(0,1))) # - 0.5))
+		N = d + int(size_scale * np.random.uniform(0,1))
 		if override_N_d_m:
 			N = override_N
 			d = override_d
@@ -4507,6 +4509,10 @@ def pp_dim_AB_experiment(num_iterations : int = 10,
 		min_nu_over_d_A_nu_over_d_B_vals[i] = min_nu_over_d_A_nu_over_d_B
 		max_nu_over_d_A_nu_over_d_B_vals[i] = max_nu_over_d_A_nu_over_d_B
 		nu_over_d_A_times_nu_over_d_B_vals[i] = nu_over_d_A * nu_over_d_B
+        
+		nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = nu_over_d_A_times_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
+		min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = min_nu_over_d_A_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
+        
 
 		print(i, pp_dim_AB, pp_dim_A, pp_dim_B)
 		print(i, "is PP(AB) = ", pp_dim_AB , " leq min(PP(A), PP(B)) = ", min(pp_dim_A, pp_dim_B))
@@ -4524,7 +4530,9 @@ def pp_dim_AB_experiment(num_iterations : int = 10,
 	 "nu_over_d_AB_vals" : nu_over_d_AB_vals,
 	 "min_nu_over_d_A_nu_over_d_B_vals" : min_nu_over_d_A_nu_over_d_B_vals,
 	 "max_nu_over_d_A_nu_over_d_B_vals" : max_nu_over_d_A_nu_over_d_B_vals,
-	 "nu_over_d_A_times_nu_over_d_B_vals" : nu_over_d_A_times_nu_over_d_B_vals
+	 "nu_over_d_A_times_nu_over_d_B_vals" : nu_over_d_A_times_nu_over_d_B_vals,
+	 "nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals" : nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals,
+	 "min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals" : min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals    
 	}
 	
 	return results_dict
