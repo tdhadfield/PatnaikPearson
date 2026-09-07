@@ -5466,6 +5466,44 @@ def plot_three(results_dict : dict, prefix : str):
 
     sep = "\n=======================================\n"
     print(sep, "Statistics for (Tr(Y)^2 / Tr(Y^2)) / nu(psi)", sep)
-    pp.display_stats(ratio_vals)
-    pp.plot_histogram_of_values(ratio_vals)
+    display_stats(ratio_vals)
+    plot_histogram_of_values(ratio_vals)
+
+    this_title = prefix
+    this_title += "\n (1/d) PP(A), (1/d) PP(B) and (1/d) (Tr(Y)^2 / Tr(Y^2)) vs (1/d) nu(psi)"
+    this_title += "\n " + str(min_alpha) + " <= alpha <= " + str(max_alpha)
+    this_title += "\n " + str(min_beta) + " <= beta <= " + str(max_beta)
+    this_title += "\n " + str(min_d) + " <= d <= " + str(max_d)
+    this_title += "\n num_vals = " + str(len(d_vals))
+    plt.plot(nu_psi_over_d_vals, nu_psi_over_d_vals, color = "red", label = "(1/d) nu(psi)")
+    plt.scatter(nu_psi_over_d_vals, pp_dim_A_over_d_times_pp_dim_B_over_d_vals, label = "(1/d) PP(A) * (1/d) PP(B)")
+    plt.scatter(nu_psi_over_d_vals, trace_Y_all_squared_over_trace_Ysquared_over_d_vals, 
+                label = "(1/d) * (Tr(Y)^2 / Tr(Y^2))")
+    plt.scatter(nu_psi_over_d_vals, min_pp_dim_A_over_d_pp_dim_B_over_d_vals, label = "min((1/d) PP(A), 1/d PP(B))")
+    plt.xlabel("(1/d) nu(psi)")
+    plt.ylabel("PP(.)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix
+    this_title += "\n (1/d) PP(A), (1/d) PP(B) and (1/d) nu(psi) vs (1/d) (Tr(Y)^2 / Tr(Y^2))"
+    this_title += "\n " + str(min_alpha) + " <= alpha <= " + str(max_alpha)
+    this_title += "\n " + str(min_beta) + " <= beta <= " + str(max_beta)
+    this_title += "\n " + str(min_d) + " <= d <= " + str(max_d)
+    this_title += "\n num_vals = " + str(len(d_vals))
+    plt.plot(trace_Y_all_squared_over_trace_Ysquared_over_d_vals, 
+                trace_Y_all_squared_over_trace_Ysquared_over_d_vals, color = "red",
+                label = "(1/d) (Tr(Y)^2 / Tr(Y^2))")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_over_d_vals,
+                pp_dim_A_over_d_times_pp_dim_B_over_d_vals, label = "(1/d) PP(A) * (1/d) PP(B)")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_over_d_vals,
+                nu_psi_over_d_vals, label = "(1/d) nu(psi)")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_over_d_vals,
+                min_pp_dim_A_over_d_pp_dim_B_over_d_vals, label = "min((1/d) PP(A), 1/d PP(B))")
+    plt.xlabel("(1/d) (Tr(Y)^2 / Tr(Y^2))")
+    plt.ylabel("PP(.)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
   
