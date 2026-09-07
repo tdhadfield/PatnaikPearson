@@ -5338,4 +5338,134 @@ def plot_one(results_dict : dict, prefix : str):
     plt.ylabel("values")
     plt.title(this_title)
     plt.show()
+    
+def plot_two(results_dict : dict, prefix : str):
+    
+    # produce plots for run_grand_unified_experiment_Y_eq_AQBQt
+
+    d_vals = results_dict["d_vals"]
+    A_pareto_alpha_vals = results_dict["A_pareto_alpha_vals"]
+    B_pareto_beta_vals = results_dict["B_pareto_beta_vals"]
+    trace_S_vals = results_dict["trace_S_vals"]
+    trace_Ssquared_vals = results_dict["trace_Ssquared_vals"]
+    nu_psi_vals = results_dict["nu_psi_vals"]
+    nu_psi_over_d_vals = results_dict["nu_psi_over_d_vals"]
+    trace_Y_vals = results_dict["trace_Y_vals"]
+    trace_Ysquared_vals = results_dict["trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_over_d_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_over_d_vals"]
+    trace_Y_over_trace_S_vals = results_dict["trace_Y_over_trace_S_vals"]
+    trace_Ysquared_over_trace_Ssquared_vals = results_dict["trace_Ysquared_over_trace_Ssquared_vals"]    
+    pp_dim_S_vals = results_dict["pp_dim_S_vals"]
+    pp_dim_Y_vals = results_dict["pp_dim_Y_vals"]
+    pp_dim_A_vals = results_dict["pp_dim_A_vals"]
+    pp_dim_B_vals = results_dict["pp_dim_B_vals"]
+    pp_dim_S_over_d_vals = results_dict["pp_dim_S_over_d_vals"]
+    pp_dim_Y_over_d_vals = results_dict["pp_dim_Y_over_d_vals"]
+    pp_dim_A_over_d_vals = results_dict["pp_dim_A_over_d_vals"]
+    pp_dim_B_over_d_vals = results_dict["pp_dim_B_over_d_vals"]
+    min_pp_dim_A_over_d_pp_dim_B_over_d_vals = results_dict["min_pp_dim_A_over_d_pp_dim_B_over_d_vals"]
+    pp_dim_A_over_d_times_pp_dim_B_over_d_vals = results_dict["pp_dim_A_over_d_times_pp_dim_B_over_d_vals"]
+    
+    min_d = int(np.min(d_vals))
+    max_d = int(np.max(d_vals))
+
+    min_alpha = np.min(A_pareto_alpha_vals)
+    max_alpha = np.max(A_pareto_alpha_vals)
+
+    generic_title_one = "\n " + str(min_alpha) + " <= alpha <= " + str(max_alpha)
+    generic_title_two = "\n d = " + str(min_d)
+
+    this_title = prefix + " Tr(Y)^2 / Tr(Y^2) and nu(psi) vs alpha"
+    this_title += generic_title_one
+    this_title += generic_title_two
+    plt.scatter(A_pareto_alpha_vals, trace_Y_all_squared_over_trace_Ysquared_vals, label = "Tr(Y)^2 / Tr(Y^2)")
+    plt.scatter(A_pareto_alpha_vals, nu_psi_vals, label = "nu(psi)")
+    plt.xlabel("alpha")
+    plt.ylabel("values")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + " nu(psi) vs Tr(Y)^2 / Tr(Y^2), as alpha varies"
+    this_title += generic_title_one
+    this_title += generic_title_two
+    plt.plot(trace_Y_all_squared_over_trace_Ysquared_vals, trace_Y_all_squared_over_trace_Ysquared_vals, 
+             color = "red", label = "Tr(Y)^2 / Tr(Y^2)")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_vals, nu_psi_vals, label = "nu(psi)")
+    plt.xlabel("Tr(Y)^2 / Tr(Y^2)")
+    plt.ylabel("values")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + "(Tr(Y)^2 / Tr(Y^2)) / nu(psi) vs alpha"
+    this_title += generic_title_one
+    this_title += generic_title_two
+    plt.scatter(A_pareto_alpha_vals, trace_Y_all_squared_over_trace_Ysquared_vals / nu_psi_vals, 
+                label = "(Tr(Y)^2 / Tr(Y^2)) / nu(psi)")
+    plt.xlabel("alpha")
+    plt.ylabel("(Tr(Y)^2 / Tr(Y^2)) / nu(psi)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+    
+def plot_three(results_dict : dict, prefix : str):
+    
+    # produce plots for run_grand_unified_experiment_Y_eq_AQBQt
+    # plot histograms
+
+    d_vals = results_dict["d_vals"]
+    A_pareto_alpha_vals = results_dict["A_pareto_alpha_vals"]
+    B_pareto_beta_vals = results_dict["B_pareto_beta_vals"]
+    trace_S_vals = results_dict["trace_S_vals"]
+    trace_Ssquared_vals = results_dict["trace_Ssquared_vals"]
+    nu_psi_vals = results_dict["nu_psi_vals"]
+    nu_psi_over_d_vals = results_dict["nu_psi_over_d_vals"]
+    trace_Y_vals = results_dict["trace_Y_vals"]
+    trace_Ysquared_vals = results_dict["trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_vals"]
+    trace_Y_all_squared_over_trace_Ysquared_over_d_vals = results_dict["trace_Y_all_squared_over_trace_Ysquared_over_d_vals"]
+    trace_Y_over_trace_S_vals = results_dict["trace_Y_over_trace_S_vals"]
+    trace_Ysquared_over_trace_Ssquared_vals = results_dict["trace_Ysquared_over_trace_Ssquared_vals"]    
+    pp_dim_S_vals = results_dict["pp_dim_S_vals"]
+    pp_dim_Y_vals = results_dict["pp_dim_Y_vals"]
+    pp_dim_A_vals = results_dict["pp_dim_A_vals"]
+    pp_dim_B_vals = results_dict["pp_dim_B_vals"]
+    pp_dim_S_over_d_vals = results_dict["pp_dim_S_over_d_vals"]
+    pp_dim_Y_over_d_vals = results_dict["pp_dim_Y_over_d_vals"]
+    pp_dim_A_over_d_vals = results_dict["pp_dim_A_over_d_vals"]
+    pp_dim_B_over_d_vals = results_dict["pp_dim_B_over_d_vals"]
+    min_pp_dim_A_over_d_pp_dim_B_over_d_vals = results_dict["min_pp_dim_A_over_d_pp_dim_B_over_d_vals"]
+    pp_dim_A_over_d_times_pp_dim_B_over_d_vals = results_dict["pp_dim_A_over_d_times_pp_dim_B_over_d_vals"]
+    
+    min_d = int(np.min(d_vals))
+    max_d = int(np.max(d_vals))
+
+    min_alpha = np.min(A_pareto_alpha_vals)
+    max_alpha = np.max(A_pareto_alpha_vals)
+
+    min_beta = np.min(B_pareto_beta_vals)
+    max_beta = np.max(B_pareto_beta_vals)
+
+    this_title = prefix
+    this_title += "\n " + str(min_alpha) + " <= alpha <= " + str(max_alpha)
+    this_title += "\n " + str(min_beta) + " <= beta <= " + str(max_beta)
+    this_title += "\n " + str(min_d) + " <= d <= " + str(max_d)
+    this_title += "\n num_vals = " + str(len(d_vals))
+    plt.plot(trace_Y_all_squared_over_trace_Ysquared_vals, 
+             trace_Y_all_squared_over_trace_Ysquared_vals, color = "red", label = "Tr(Y)^2 / Tr(Y^2)")
+    plt.scatter(trace_Y_all_squared_over_trace_Ysquared_vals, nu_psi_vals, label = "nu(psi)")
+    plt.xlabel("Tr(Y)^2 / Tr(Y^2)")
+    plt.ylabel("values")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    ratio_vals = trace_Y_all_squared_over_trace_Ysquared_vals / nu_psi_vals
+
+    sep = "\n=======================================\n"
+    print(sep, "Statistics for (Tr(Y)^2 / Tr(Y^2)) / nu(psi)", sep)
+    pp.display_stats(ratio_vals)
+    pp.plot_histogram_of_values(ratio_vals)
   

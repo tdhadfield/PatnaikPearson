@@ -113,3 +113,5 @@ from .helper import transpose_experiment_nu_over_d
 from .helper import run_grand_unified_experiment_Y_eq_AQBQt
 from .helper import get_default_config
 from .helper import plot_one
+from .helper import plot_two
+from .helper import plot_three
