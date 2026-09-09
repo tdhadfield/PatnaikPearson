@@ -115,3 +115,7 @@ from .helper import get_default_config
 from .helper import plot_one
 from .helper import plot_two
 from .helper import plot_three
+from .helper import pp_dim_XW_experiment
+from .helper import pp_dim_XW_experiment_get_default_config
+from .helper import pp_dim_XW_experiment_plot_one
+from .helper import pp_dim_XW_experiment_pareto_plot

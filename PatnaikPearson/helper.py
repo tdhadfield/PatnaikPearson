@@ -978,7 +978,7 @@ def calculate_nu_alpha_W_WTW_square_W(d : int,
                                       alpha : float, 
                                       verbose : bool = False
                                       ) -> tuple:
-								 
+                                 
   # d is the dimension of the ambient space
   # W is an d * d matrix
   # WTW is a d * d matrix
@@ -1465,9 +1465,9 @@ def generate_orthogonal_matrix(dim : int) -> np.ndarray:
   return Q
   
 def calculate_nu_twonn_dim(
-	input_data : np.ndarray,
-	verbose : bool = False
-	) -> tuple[float, float]:
+    input_data : np.ndarray,
+    verbose : bool = False
+    ) -> tuple[float, float]:
         
   # ** TO DO : adapt to GPU?
 
@@ -1517,10 +1517,10 @@ def calculate_nu_twonn_dim(
   return nu, twonn_dim
   
 def calculate_PatnaikPearson_dim(
-	input_data : np.ndarray,
-	verbose : bool = False,
+    input_data : np.ndarray,
+    verbose : bool = False,
     also_return_S : bool = False
-	) -> tuple: #float:
+    ) -> tuple: #float:
         
   if use_gpu:
       return calculate_PatnaikPearson_dim_gpu(input_data, verbose, also_return_S)
@@ -1529,10 +1529,10 @@ def calculate_PatnaikPearson_dim(
       
   
 def calculate_PatnaikPearson_dim_cpu(
-	input_data : np.ndarray,
-	verbose : bool = False,
+    input_data : np.ndarray,
+    verbose : bool = False,
     also_return_S : bool = False
-	) -> tuple: #float:
+    ) -> tuple: #float:
         
   if verbose:
     print("reached calculate_PatnaikPearson_dim_cpu")
@@ -1584,10 +1584,10 @@ def calculate_PatnaikPearson_dim_cpu(
   
   
 def calculate_PatnaikPearson_dim_gpu(
-	input_data : np.ndarray,
-	verbose : bool = False,
+    input_data : np.ndarray,
+    verbose : bool = False,
     also_return_S : bool = False
-	) -> tuple: #float:
+    ) -> tuple: #float:
         
   if verbose:
       print("reached calculate_PatnaikPearson_dim_gpu")
@@ -2734,134 +2734,134 @@ def generate_random_data_of_given_intrinsic_dim(embedding_dim : int,
   return full_random
   
 def generate_N_points_in_k_dimensional_subspace_in_R_d(
-	N : int,
-	d : int,
-	k : int,
-	manifold_type : str = "None",
-	is_solid : bool = True,
-	eccentricity : float = 1.0,
-	displacement_scale : float = 0.0,
+    N : int,
+    d : int,
+    k : int,
+    manifold_type : str = "None",
+    is_solid : bool = True,
+    eccentricity : float = 1.0,
+    displacement_scale : float = 0.0,
   no_orthogonal_multiplication : bool = False,
-	verbose : bool = False,
+    verbose : bool = False,
   debug_mode : bool = False
-	) -> np.ndarray:
+    ) -> np.ndarray:
 
-	"""
-	generate N points in R^d, with actual dimension k.
-	N : number of points to generate
-	d : dimension of full space
-	k : desired dimension of data manifold
-	"""
+    """
+    generate N points in R^d, with actual dimension k.
+    N : number of points to generate
+    d : dimension of full space
+    k : desired dimension of data manifold
+    """
     # ** TO DO : adapt to GPU?
 
-	is_cuboid = False
-	is_ellipsoid = False
+    is_cuboid = False
+    is_ellipsoid = False
 
-	if manifold_type == "cuboid":
-		is_cuboid = True
-	if manifold_type == "cube":
-		is_cuboid = True
-	if manifold_type == "ellipsoid":
-		is_ellipsoid = True
-	if manifold_type == "sphere":
-		is_ellipsoid = True
+    if manifold_type == "cuboid":
+        is_cuboid = True
+    if manifold_type == "cube":
+        is_cuboid = True
+    if manifold_type == "ellipsoid":
+        is_ellipsoid = True
+    if manifold_type == "sphere":
+        is_ellipsoid = True
 
-	use_this_k = k
-	if not is_solid:
-		use_this_k = k + 1
+    use_this_k = k
+    if not is_solid:
+        use_this_k = k + 1
 
-	if debug_mode:
-		print("k = ", k, " : use_this_k = ", use_this_k)
+    if debug_mode:
+        print("k = ", k, " : use_this_k = ", use_this_k)
 
-	X = np.zeros((N,d))
-	eps = 1e-6
+    X = np.zeros((N,d))
+    eps = 1e-6
 
-	if is_ellipsoid:
-		# first, we generate N random vectors in R^d
-		# second, we project onto a use_this_k -dimensional linear subspace
-		# third, we normalise the vectors to unit length, which results in a (use_this_k - 1) -dimensional sphere
-		# fourth, for solid only, we rescale so that the vectors have length between 0 and 1, with uniform sampling from the k-ball
+    if is_ellipsoid:
+        # first, we generate N random vectors in R^d
+        # second, we project onto a use_this_k -dimensional linear subspace
+        # third, we normalise the vectors to unit length, which results in a (use_this_k - 1) -dimensional sphere
+        # fourth, for solid only, we rescale so that the vectors have length between 0 and 1, with uniform sampling from the k-ball
 
-		# one : generate
-		X = np.random.randn(N, d)
+        # one : generate
+        X = np.random.randn(N, d)
 
-		# two : project
-		projection_matrix = np.zeros((d,d))
-		for i in range(0,use_this_k):
-			projection_matrix[i,i]=1.0
-		X = X @ projection_matrix
-		if debug_mode:
-			print("projection_matrix = ", projection_matrix)
+        # two : project
+        projection_matrix = np.zeros((d,d))
+        for i in range(0,use_this_k):
+            projection_matrix[i,i]=1.0
+        X = X @ projection_matrix
+        if debug_mode:
+            print("projection_matrix = ", projection_matrix)
 
-		# three : normalise
-		for i in range(0,N):
-			x_i = X[i,:]
-			x_i = x_i / (eps + np.linalg.norm(x_i))
-			X[i,:] = x_i
+        # three : normalise
+        for i in range(0,N):
+            x_i = X[i,:]
+            x_i = x_i / (eps + np.linalg.norm(x_i))
+            X[i,:] = x_i
 
-		if is_solid:
-			#rescale
-			t = np.random.uniform(0, 1, d)
-			r = t ** (1.0/k)
-			scale_matrix = np.diag(r)
-			X = X @ scale_matrix
+        if is_solid:
+            #rescale
+            t = np.random.uniform(0, 1, d)
+            r = t ** (1.0/k)
+            scale_matrix = np.diag(r)
+            X = X @ scale_matrix
 
-	if is_cuboid:
-		# first, we generate N random vectors in R^d, drawing each entry from a uniform distribution between -1 and 1
-		# second, we project onto a use_this_k -dimensional linear subspace
-		# third, for non-solid, we randomly choose a coordinate between 0 and k, and set that coordinate to either -1 or 1 (with equal probability)
+    if is_cuboid:
+        # first, we generate N random vectors in R^d, drawing each entry from a uniform distribution between -1 and 1
+        # second, we project onto a use_this_k -dimensional linear subspace
+        # third, for non-solid, we randomly choose a coordinate between 0 and k, and set that coordinate to either -1 or 1 (with equal probability)
 
-		# one : generate
-		X = np.random.uniform(low = -1, high = +1, size = (N, d))
+        # one : generate
+        X = np.random.uniform(low = -1, high = +1, size = (N, d))
 
-		# two : project
-		projection_matrix = np.zeros((d,d))
-		for i in range(0,use_this_k):
-			projection_matrix[i,i]=1.0
-		X = X @ projection_matrix
+        # two : project
+        projection_matrix = np.zeros((d,d))
+        for i in range(0,use_this_k):
+            projection_matrix[i,i]=1.0
+        X = X @ projection_matrix
 
-		# three : for non-solid, choose a coordinate index between 0 and k (inclusive),
-		# and set the corresponding coordinate to -1 or +1
-		if not is_solid:
-			for i in range(0,N):
-				this_index = np.random.randint(0,k+1) # 0 to k inclusive (but not k+1)
-				X[i,this_index] = np.random.choice([-1,1])
+        # three : for non-solid, choose a coordinate index between 0 and k (inclusive),
+        # and set the corresponding coordinate to -1 or +1
+        if not is_solid:
+            for i in range(0,N):
+                this_index = np.random.randint(0,k+1) # 0 to k inclusive (but not k+1)
+                X[i,this_index] = np.random.choice([-1,1])
 
 
 
-	if verbose:
-		plot_histogram_of_values(X,verbose)
+    if verbose:
+        plot_histogram_of_values(X,verbose)
 
-	# multiply by eccentricities
-	these_eccentricies = np.random.uniform(1, eccentricity, use_this_k)
-	ecc_scale_matrix = np.zeros((d,d))
-	for i in range(0,use_this_k):
-		ecc_scale_matrix[i,i] = these_eccentricies[i]
-	ecc_scale_matrix[0,0] = 1.0
-	ecc_scale_matrix[use_this_k - 1, use_this_k - 1] = eccentricity
-	X = X @ ecc_scale_matrix
+    # multiply by eccentricities
+    these_eccentricies = np.random.uniform(1, eccentricity, use_this_k)
+    ecc_scale_matrix = np.zeros((d,d))
+    for i in range(0,use_this_k):
+        ecc_scale_matrix[i,i] = these_eccentricies[i]
+    ecc_scale_matrix[0,0] = 1.0
+    ecc_scale_matrix[use_this_k - 1, use_this_k - 1] = eccentricity
+    X = X @ ecc_scale_matrix
 
-	if verbose:
-		plot_histogram_of_values(X,verbose)
+    if verbose:
+        plot_histogram_of_values(X,verbose)
 
-	# multiply by orthogonal matrix
-	if not no_orthogonal_multiplication:
-		Q = generate_orthogonal_matrix(d)
-		X = X @ Q
+    # multiply by orthogonal matrix
+    if not no_orthogonal_multiplication:
+        Q = generate_orthogonal_matrix(d)
+        X = X @ Q
 
-	if verbose:
-		plot_histogram_of_values(X,verbose)
+    if verbose:
+        plot_histogram_of_values(X,verbose)
 
-	#add displacement vector
-	displacement_vector = np.zeros(d)
-	if displacement_scale > 0.0:
-		displacement_vector = np.random.randn(d)
-		norm_displacement_vector = np.linalg.norm(displacement_vector)
-		displacement_vector = displacement_vector / (eps + norm_displacement_vector)
-		displacement_vector = displacement_vector * displacement_scale
-	X = X + displacement_vector
+    #add displacement vector
+    displacement_vector = np.zeros(d)
+    if displacement_scale > 0.0:
+        displacement_vector = np.random.randn(d)
+        norm_displacement_vector = np.linalg.norm(displacement_vector)
+        displacement_vector = displacement_vector / (eps + norm_displacement_vector)
+        displacement_vector = displacement_vector * displacement_scale
+    X = X + displacement_vector
 
-	return X, displacement_vector
+    return X, displacement_vector
     
 def run_experiment_one( N : int,
                         d : int,
@@ -3568,13 +3568,13 @@ def relu_experiment(N : int,
     print("actual_alpha_reluX = ", actual_alpha_reluX)
 
   results_dict = {
-	"actual_alpha_X" : actual_alpha_X,
-	"actual_alpha_reluX" : actual_alpha_reluX,
-	"pp_dim_X" : pp_dim_X, 
-	"pp_dim_reluX" : pp_dim_reluX,
-	"nu_over_d_X" : nu_over_d_X, 
-	"nu_over_d_reluX" : nu_over_d_reluX
-	}
+    "actual_alpha_X" : actual_alpha_X,
+    "actual_alpha_reluX" : actual_alpha_reluX,
+    "pp_dim_X" : pp_dim_X, 
+    "pp_dim_reluX" : pp_dim_reluX,
+    "nu_over_d_X" : nu_over_d_X, 
+    "nu_over_d_reluX" : nu_over_d_reluX
+    }
 
   return results_dict
  
@@ -3609,7 +3609,7 @@ def sigmoid_experiment(N : int,
                     use_pareto,
                     use_uniform,
                     use_cauchy)
-                    				
+                                    
   dim_X = X.shape[1]
   pp_dim_X = calculate_PatnaikPearson_dim(X)
   nu_over_d_X = pp_dim_X / dim_X
@@ -3635,13 +3635,13 @@ def sigmoid_experiment(N : int,
     print("actual_alpha_sigmoidX = ", actual_alpha_sigmoidX)
 
   results_dict = {
-	"actual_alpha_X" : actual_alpha_X,
-	"actual_alpha_sigmoidX" : actual_alpha_sigmoidX,
-	"pp_dim_X" : pp_dim_X, 
-	"pp_dim_sigmoidX" : pp_dim_sigmoidX,
-	"nu_over_d_X" : nu_over_d_X, 
-	"nu_over_d_sigmoidX" : nu_over_d_sigmoidX
-	}
+    "actual_alpha_X" : actual_alpha_X,
+    "actual_alpha_sigmoidX" : actual_alpha_sigmoidX,
+    "pp_dim_X" : pp_dim_X, 
+    "pp_dim_sigmoidX" : pp_dim_sigmoidX,
+    "nu_over_d_X" : nu_over_d_X, 
+    "nu_over_d_sigmoidX" : nu_over_d_sigmoidX
+    }
 
   return results_dict
   
@@ -4299,128 +4299,128 @@ def interpolation_experiment(N : int,
                             initial_alpha_X1 : float
                             ) -> dict:
 
-	t_vals = np.arange(0.0,1.01,0.01)
-	num_iterations = len(t_vals)
+    t_vals = np.arange(0.0,1.01,0.01)
+    num_iterations = len(t_vals)
 
-	initial_alpha_X0_vals = np.zeros(num_iterations)
-	initial_alpha_X1_vals = np.zeros(num_iterations)
-	actual_alpha_X0_vals = np.zeros(num_iterations)
-	actual_alpha_X1_vals = np.zeros(num_iterations)
-	actual_alpha_Xt_vals = np.zeros(num_iterations)
-	nu_over_d_X0_vals = np.zeros(num_iterations)
-	nu_over_d_X1_vals = np.zeros(num_iterations)
-	nu_over_d_Xt_vals = np.zeros(num_iterations)
-	estimate_alpha_Xt_vals = np.zeros(num_iterations)
-	estimate_nu_over_d_Xt_vals = np.zeros(num_iterations)
+    initial_alpha_X0_vals = np.zeros(num_iterations)
+    initial_alpha_X1_vals = np.zeros(num_iterations)
+    actual_alpha_X0_vals = np.zeros(num_iterations)
+    actual_alpha_X1_vals = np.zeros(num_iterations)
+    actual_alpha_Xt_vals = np.zeros(num_iterations)
+    nu_over_d_X0_vals = np.zeros(num_iterations)
+    nu_over_d_X1_vals = np.zeros(num_iterations)
+    nu_over_d_Xt_vals = np.zeros(num_iterations)
+    estimate_alpha_Xt_vals = np.zeros(num_iterations)
+    estimate_nu_over_d_Xt_vals = np.zeros(num_iterations)
 
-	X0 = generate_data_manifold(N, d, initial_alpha_X0)
-	pp_dim_X0 = calculate_PatnaikPearson_dim(X0)
-	dim_X0 = X0.shape[1]
-	nu_over_d_X0 = pp_dim_X0 / dim_X0
-	actual_alpha_X0 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X0, dim_X0)
+    X0 = generate_data_manifold(N, d, initial_alpha_X0)
+    pp_dim_X0 = calculate_PatnaikPearson_dim(X0)
+    dim_X0 = X0.shape[1]
+    nu_over_d_X0 = pp_dim_X0 / dim_X0
+    actual_alpha_X0 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X0, dim_X0)
 
-	X1 = generate_data_manifold(N, d, initial_alpha_X1)
-	pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
-	dim_X1 = X1.shape[1]
-	nu_over_d_X1 = pp_dim_X1 / dim_X1
-	actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
+    X1 = generate_data_manifold(N, d, initial_alpha_X1)
+    pp_dim_X1 = calculate_PatnaikPearson_dim(X1)
+    dim_X1 = X1.shape[1]
+    nu_over_d_X1 = pp_dim_X1 / dim_X1
+    actual_alpha_X1 = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X1, dim_X1)
 
-	i = 0
-	for t in t_vals:
-		Xt = (1.0 - t) * X0 + t * X1
-		pp_dim_Xt = calculate_PatnaikPearson_dim(Xt)
-		dim_Xt = Xt.shape[1]
-		nu_over_d_Xt = pp_dim_Xt / dim_Xt
-		actual_alpha_Xt = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xt, dim_Xt)
-		estimate_alpha_Xt = (1.0 - t) * actual_alpha_X0 + t * actual_alpha_X1
-		_, estimate_nu_over_d_Xt = calculate_nu_and_nu_over_d_given_alpha_d_analytic(estimate_alpha_Xt, dim_Xt)
+    i = 0
+    for t in t_vals:
+        Xt = (1.0 - t) * X0 + t * X1
+        pp_dim_Xt = calculate_PatnaikPearson_dim(Xt)
+        dim_Xt = Xt.shape[1]
+        nu_over_d_Xt = pp_dim_Xt / dim_Xt
+        actual_alpha_Xt = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xt, dim_Xt)
+        estimate_alpha_Xt = (1.0 - t) * actual_alpha_X0 + t * actual_alpha_X1
+        _, estimate_nu_over_d_Xt = calculate_nu_and_nu_over_d_given_alpha_d_analytic(estimate_alpha_Xt, dim_Xt)
 
-		print("actual_alpha_X0 = ", actual_alpha_X0, ", actual_alpha_X1 = ", actual_alpha_X1, "t = ", t, ", actual_alpha_Xt = ", actual_alpha_Xt, "estimate_alpha_Xt = ", estimate_alpha_Xt)
+        print("actual_alpha_X0 = ", actual_alpha_X0, ", actual_alpha_X1 = ", actual_alpha_X1, "t = ", t, ", actual_alpha_Xt = ", actual_alpha_Xt, "estimate_alpha_Xt = ", estimate_alpha_Xt)
 
-		initial_alpha_X0_vals[i] = initial_alpha_X0
-		initial_alpha_X1_vals[i] = initial_alpha_X1
-		actual_alpha_X0_vals[i] = actual_alpha_X0
-		actual_alpha_X1_vals[i] = actual_alpha_X1
-		actual_alpha_Xt_vals[i] = actual_alpha_Xt
-		nu_over_d_X0_vals[i] = nu_over_d_X0
-		nu_over_d_X1_vals[i] = nu_over_d_X1
-		nu_over_d_Xt_vals[i] = nu_over_d_Xt
-		estimate_alpha_Xt_vals[i] = estimate_alpha_Xt
-		estimate_nu_over_d_Xt_vals[i] = estimate_nu_over_d_Xt
-		i += 1
+        initial_alpha_X0_vals[i] = initial_alpha_X0
+        initial_alpha_X1_vals[i] = initial_alpha_X1
+        actual_alpha_X0_vals[i] = actual_alpha_X0
+        actual_alpha_X1_vals[i] = actual_alpha_X1
+        actual_alpha_Xt_vals[i] = actual_alpha_Xt
+        nu_over_d_X0_vals[i] = nu_over_d_X0
+        nu_over_d_X1_vals[i] = nu_over_d_X1
+        nu_over_d_Xt_vals[i] = nu_over_d_Xt
+        estimate_alpha_Xt_vals[i] = estimate_alpha_Xt
+        estimate_nu_over_d_Xt_vals[i] = estimate_nu_over_d_Xt
+        i += 1
   
-	results_dict = {
+    results_dict = {
         "t_vals" : t_vals,
-		"initial_alpha_X0_vals" : initial_alpha_X0_vals,
-		"initial_alpha_X1_vals" : initial_alpha_X1_vals,
-		"actual_alpha_X0_vals" : actual_alpha_X0_vals,
-		"actual_alpha_X1_vals" : actual_alpha_X1_vals,
-		"actual_alpha_Xt_vals" : actual_alpha_Xt_vals,
-		"nu_over_d_X0_vals" : nu_over_d_X0_vals,
-		"nu_over_d_X1_vals" : nu_over_d_X1_vals,
-		"nu_over_d_Xt_vals" : nu_over_d_Xt_vals,
-		"estimate_alpha_Xt_vals" : estimate_alpha_Xt_vals,
-		"estimate_nu_over_d_Xt_vals" : estimate_nu_over_d_Xt_vals
-	}
+        "initial_alpha_X0_vals" : initial_alpha_X0_vals,
+        "initial_alpha_X1_vals" : initial_alpha_X1_vals,
+        "actual_alpha_X0_vals" : actual_alpha_X0_vals,
+        "actual_alpha_X1_vals" : actual_alpha_X1_vals,
+        "actual_alpha_Xt_vals" : actual_alpha_Xt_vals,
+        "nu_over_d_X0_vals" : nu_over_d_X0_vals,
+        "nu_over_d_X1_vals" : nu_over_d_X1_vals,
+        "nu_over_d_Xt_vals" : nu_over_d_Xt_vals,
+        "estimate_alpha_Xt_vals" : estimate_alpha_Xt_vals,
+        "estimate_nu_over_d_Xt_vals" : estimate_nu_over_d_Xt_vals
+    }
 
-	return results_dict
+    return results_dict
     
-def softmax_experiment(	N : int, 
-						d : int, 
-						temps : np.ndarray, 
-						alpha : float, 
-						uniform_draws : bool = False,
-						use_pareto : bool = True,
-						use_uniform : bool = False,
-						use_cauchy : bool = False,
-						verbose : bool = False
-						) -> dict:
+def softmax_experiment(    N : int, 
+                        d : int, 
+                        temps : np.ndarray, 
+                        alpha : float, 
+                        uniform_draws : bool = False,
+                        use_pareto : bool = True,
+                        use_uniform : bool = False,
+                        use_cauchy : bool = False,
+                        verbose : bool = False
+                        ) -> dict:
 
 
 
-	X = generate_data_manifold(N, d, alpha, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
+    X = generate_data_manifold(N, d, alpha, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose)
 
-	pp_dim_X = calculate_PatnaikPearson_dim(X)
-	dim_X = X.shape[1]
-	nu_over_d_X = pp_dim_X / dim_X
-	actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
+    pp_dim_X = calculate_PatnaikPearson_dim(X)
+    dim_X = X.shape[1]
+    nu_over_d_X = pp_dim_X / dim_X
+    actual_alpha_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_X, dim_X)
 
-	#log_temps = np.arange(-6.0,11.0,1.0) # np.arange(-1.0, 1.1, 0.1)
-	#print(log_temps)
-	#temps = 10**log_temps
-	#print(temps)
+    #log_temps = np.arange(-6.0,11.0,1.0) # np.arange(-1.0, 1.1, 0.1)
+    #print(log_temps)
+    #temps = 10**log_temps
+    #print(temps)
 
-	num_iterations = len(temps)
+    num_iterations = len(temps)
 
-	pp_dim_softmax_X_vals = np.zeros(num_iterations)
-	nu_over_d_softmax_X_vals = np.zeros(num_iterations)
-	actual_alpha_softmax_X_vals = np.zeros(num_iterations)
+    pp_dim_softmax_X_vals = np.zeros(num_iterations)
+    nu_over_d_softmax_X_vals = np.zeros(num_iterations)
+    actual_alpha_softmax_X_vals = np.zeros(num_iterations)
 
-	i = 0
-	for T in temps:
-		softmax_X = row_wise_softmax(X,T)
-		pp_dim_softmax_X = calculate_PatnaikPearson_dim(softmax_X)
-		dim_softmax_X = softmax_X.shape[1]
-		nu_over_d_softmax_X = pp_dim_softmax_X / dim_softmax_X
-		actual_alpha_softmax_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_softmax_X, dim_softmax_X)
+    i = 0
+    for T in temps:
+        softmax_X = row_wise_softmax(X,T)
+        pp_dim_softmax_X = calculate_PatnaikPearson_dim(softmax_X)
+        dim_softmax_X = softmax_X.shape[1]
+        nu_over_d_softmax_X = pp_dim_softmax_X / dim_softmax_X
+        actual_alpha_softmax_X = calculate_alpha_given_nu_over_d_and_d(nu_over_d_softmax_X, dim_softmax_X)
 
-		pp_dim_softmax_X_vals[i] = pp_dim_softmax_X
-		nu_over_d_softmax_X_vals[i] = nu_over_d_softmax_X
-		actual_alpha_softmax_X_vals[i] = actual_alpha_softmax_X
+        pp_dim_softmax_X_vals[i] = pp_dim_softmax_X
+        nu_over_d_softmax_X_vals[i] = nu_over_d_softmax_X
+        actual_alpha_softmax_X_vals[i] = actual_alpha_softmax_X
 
-		print(i, T, pp_dim_softmax_X, nu_over_d_softmax_X, actual_alpha_softmax_X)
-		i += 1
-		
-	results_dict = {
-		"pp_dim_X" : pp_dim_X,
-		"nu_over_d_X" : nu_over_d_X,
-		"actual_alpha_X" : actual_alpha_X,
-		"pp_dim_softmax_X_vals" : pp_dim_softmax_X_vals,
-		"nu_over_d_softmax_X_vals" : nu_over_d_softmax_X_vals,
-		"actual_alpha_softmax_X_vals" : actual_alpha_softmax_X_vals
-	}
-	
-	return results_dict
+        print(i, T, pp_dim_softmax_X, nu_over_d_softmax_X, actual_alpha_softmax_X)
+        i += 1
+        
+    results_dict = {
+        "pp_dim_X" : pp_dim_X,
+        "nu_over_d_X" : nu_over_d_X,
+        "actual_alpha_X" : actual_alpha_X,
+        "pp_dim_softmax_X_vals" : pp_dim_softmax_X_vals,
+        "nu_over_d_softmax_X_vals" : nu_over_d_softmax_X_vals,
+        "actual_alpha_softmax_X_vals" : actual_alpha_softmax_X_vals
+    }
+    
+    return results_dict
     
 
 def pp_dim_AB_experiment(num_iterations : int = 10, 
@@ -4437,105 +4437,105 @@ def pp_dim_AB_experiment(num_iterations : int = 10,
                         use_svd : bool = True
                         ) -> dict:
 
-	these_alphas = np.arange(0.1, 5.15, 0.05) # 100
+    these_alphas = np.arange(0.1, 5.15, 0.05) # 100
 
-	pp_dim_A_vals = np.zeros(num_iterations)
-	pp_dim_B_vals = np.zeros(num_iterations)
-	pp_dim_AB_vals = np.zeros(num_iterations)
-	min_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
-	max_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
+    pp_dim_A_vals = np.zeros(num_iterations)
+    pp_dim_B_vals = np.zeros(num_iterations)
+    pp_dim_AB_vals = np.zeros(num_iterations)
+    min_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
+    max_pp_dim_A_pp_dim_B_vals = np.zeros(num_iterations)
 
-	nu_over_d_A_vals = np.zeros(num_iterations)
-	nu_over_d_B_vals = np.zeros(num_iterations)
-	nu_over_d_AB_vals = np.zeros(num_iterations)
+    nu_over_d_A_vals = np.zeros(num_iterations)
+    nu_over_d_B_vals = np.zeros(num_iterations)
+    nu_over_d_AB_vals = np.zeros(num_iterations)
 
-	min_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
-	max_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
-	nu_over_d_A_times_nu_over_d_B_vals = np.zeros(num_iterations)
+    min_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
+    max_nu_over_d_A_nu_over_d_B_vals = np.zeros(num_iterations)
+    nu_over_d_A_times_nu_over_d_B_vals = np.zeros(num_iterations)
     
-	nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals  = np.zeros(num_iterations)
-	min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals = np.zeros(num_iterations)
+    nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals  = np.zeros(num_iterations)
+    min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals = np.zeros(num_iterations)
 
-	for i in range(num_iterations):
+    for i in range(num_iterations):
         # we want N >= d >= m
-		m = int(size_scale * ( 1 + np.random.uniform(0,1)))
-		d = m + int(size_scale * (np.random.uniform(0,1))) # - 0.5))
-		N = d + int(size_scale * np.random.uniform(0,1))
-		if override_N_d_m:
-			N = override_N
-			d = override_d
-			m = override_m
-		print(i, N, d, m)
+        m = int(size_scale * ( 1 + np.random.uniform(0,1)))
+        d = m + int(size_scale * (np.random.uniform(0,1))) # - 0.5))
+        N = d + int(size_scale * np.random.uniform(0,1))
+        if override_N_d_m:
+            N = override_N
+            d = override_d
+            m = override_m
+        print(i, N, d, m)
 
-		alpha_1 = random.choice(these_alphas)
-		alpha_2 = random.choice(these_alphas)
-		print(i, alpha_1, alpha_2)
+        alpha_1 = random.choice(these_alphas)
+        alpha_2 = random.choice(these_alphas)
+        print(i, alpha_1, alpha_2)
 
-		A = generate_data_manifold(N, d, alpha_1, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
-		B = generate_data_manifold(d, m, alpha_2, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+        A = generate_data_manifold(N, d, alpha_1, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
+        B = generate_data_manifold(d, m, alpha_2, uniform_draws, use_pareto, use_uniform, use_cauchy, verbose, use_svd)
 
-		pp_dim_A = calculate_PatnaikPearson_dim(A)
-		dim_A = A.shape[1]
-		nu_over_d_A = pp_dim_A / dim_A
+        pp_dim_A = calculate_PatnaikPearson_dim(A)
+        dim_A = A.shape[1]
+        nu_over_d_A = pp_dim_A / dim_A
 
-		pp_dim_B = calculate_PatnaikPearson_dim(B)
-		dim_B = B.shape[1]
-		nu_over_d_B = pp_dim_B / dim_B
+        pp_dim_B = calculate_PatnaikPearson_dim(B)
+        dim_B = B.shape[1]
+        nu_over_d_B = pp_dim_B / dim_B
 
-		cp_AB = cp.matmul(cp.array(A), cp.array(B))
-		AB = cp.asnumpy(cp_AB)
-		pp_dim_AB = calculate_PatnaikPearson_dim(AB)
-		dim_AB = AB.shape[1]
-		nu_over_d_AB = pp_dim_AB / dim_AB
+        cp_AB = cp.matmul(cp.array(A), cp.array(B))
+        AB = cp.asnumpy(cp_AB)
+        pp_dim_AB = calculate_PatnaikPearson_dim(AB)
+        dim_AB = AB.shape[1]
+        nu_over_d_AB = pp_dim_AB / dim_AB
 
-		min_pp_dim_A_pp_dim_B = min(pp_dim_A, pp_dim_B)
-		max_pp_dim_A_pp_dim_B = max(pp_dim_A, pp_dim_B)
+        min_pp_dim_A_pp_dim_B = min(pp_dim_A, pp_dim_B)
+        max_pp_dim_A_pp_dim_B = max(pp_dim_A, pp_dim_B)
 
-		min_nu_over_d_A_nu_over_d_B = min(nu_over_d_A, nu_over_d_B)
-		max_nu_over_d_A_nu_over_d_B = max(nu_over_d_A, nu_over_d_B)
+        min_nu_over_d_A_nu_over_d_B = min(nu_over_d_A, nu_over_d_B)
+        max_nu_over_d_A_nu_over_d_B = max(nu_over_d_A, nu_over_d_B)
 
-		nu_over_d_A_times_nu_over_d_B = nu_over_d_A * nu_over_d_B
+        nu_over_d_A_times_nu_over_d_B = nu_over_d_A * nu_over_d_B
 
-		pp_dim_A_vals[i] = pp_dim_A
-		pp_dim_B_vals[i] = pp_dim_B
-		pp_dim_AB_vals[i] = pp_dim_AB
-		min_pp_dim_A_pp_dim_B_vals[i] = min_pp_dim_A_pp_dim_B
-		max_pp_dim_A_pp_dim_B_vals[i] = max_pp_dim_A_pp_dim_B
+        pp_dim_A_vals[i] = pp_dim_A
+        pp_dim_B_vals[i] = pp_dim_B
+        pp_dim_AB_vals[i] = pp_dim_AB
+        min_pp_dim_A_pp_dim_B_vals[i] = min_pp_dim_A_pp_dim_B
+        max_pp_dim_A_pp_dim_B_vals[i] = max_pp_dim_A_pp_dim_B
 
-		nu_over_d_A_vals[i] = nu_over_d_A
-		nu_over_d_B_vals[i] = nu_over_d_B
-		nu_over_d_AB_vals[i] = nu_over_d_AB
+        nu_over_d_A_vals[i] = nu_over_d_A
+        nu_over_d_B_vals[i] = nu_over_d_B
+        nu_over_d_AB_vals[i] = nu_over_d_AB
 
-		min_nu_over_d_A_nu_over_d_B_vals[i] = min_nu_over_d_A_nu_over_d_B
-		max_nu_over_d_A_nu_over_d_B_vals[i] = max_nu_over_d_A_nu_over_d_B
-		nu_over_d_A_times_nu_over_d_B_vals[i] = nu_over_d_A * nu_over_d_B
+        min_nu_over_d_A_nu_over_d_B_vals[i] = min_nu_over_d_A_nu_over_d_B
+        max_nu_over_d_A_nu_over_d_B_vals[i] = max_nu_over_d_A_nu_over_d_B
+        nu_over_d_A_times_nu_over_d_B_vals[i] = nu_over_d_A * nu_over_d_B
         
-		nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = nu_over_d_A_times_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
-		min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = min_nu_over_d_A_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
+        nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = nu_over_d_A_times_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
+        min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals[i] = min_nu_over_d_A_nu_over_d_B_vals[i] / nu_over_d_AB_vals[i]
         
 
-		print(i, pp_dim_AB, pp_dim_A, pp_dim_B)
-		print(i, "is PP(AB) = ", pp_dim_AB , " leq min(PP(A), PP(B)) = ", min(pp_dim_A, pp_dim_B))
-		print(i, "is nu/d (AB) = ", nu_over_d_AB, " leq min( nu/d (A), nu/d (B)) = ", min(nu_over_d_A, nu_over_d_B)) 
-		print(i, "is nu/d (A) * nu/d (B) = ", nu_over_d_A * nu_over_d_B, " leq  nu/d (AB) = ", nu_over_d_AB)
-		
-	results_dict = {
-	 "pp_dim_A_vals" : pp_dim_A_vals,
-	 "pp_dim_B_vals" : pp_dim_B_vals,
-	 "pp_dim_AB_vals" : pp_dim_AB_vals,
-	 "min_pp_dim_A_pp_dim_B_vals" : min_pp_dim_A_pp_dim_B_vals,
-	 "max_pp_dim_A_pp_dim_B_vals" : max_pp_dim_A_pp_dim_B_vals,
-	 "nu_over_d_A_vals" : nu_over_d_A_vals,
-	 "nu_over_d_B_vals" : nu_over_d_B_vals,
-	 "nu_over_d_AB_vals" : nu_over_d_AB_vals,
-	 "min_nu_over_d_A_nu_over_d_B_vals" : min_nu_over_d_A_nu_over_d_B_vals,
-	 "max_nu_over_d_A_nu_over_d_B_vals" : max_nu_over_d_A_nu_over_d_B_vals,
-	 "nu_over_d_A_times_nu_over_d_B_vals" : nu_over_d_A_times_nu_over_d_B_vals,
-	 "nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals" : nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals,
-	 "min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals" : min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals    
-	}
-	
-	return results_dict
+        print(i, pp_dim_AB, pp_dim_A, pp_dim_B)
+        print(i, "is PP(AB) = ", pp_dim_AB , " leq min(PP(A), PP(B)) = ", min(pp_dim_A, pp_dim_B))
+        print(i, "is nu/d (AB) = ", nu_over_d_AB, " leq min( nu/d (A), nu/d (B)) = ", min(nu_over_d_A, nu_over_d_B)) 
+        print(i, "is nu/d (A) * nu/d (B) = ", nu_over_d_A * nu_over_d_B, " leq  nu/d (AB) = ", nu_over_d_AB)
+        
+    results_dict = {
+     "pp_dim_A_vals" : pp_dim_A_vals,
+     "pp_dim_B_vals" : pp_dim_B_vals,
+     "pp_dim_AB_vals" : pp_dim_AB_vals,
+     "min_pp_dim_A_pp_dim_B_vals" : min_pp_dim_A_pp_dim_B_vals,
+     "max_pp_dim_A_pp_dim_B_vals" : max_pp_dim_A_pp_dim_B_vals,
+     "nu_over_d_A_vals" : nu_over_d_A_vals,
+     "nu_over_d_B_vals" : nu_over_d_B_vals,
+     "nu_over_d_AB_vals" : nu_over_d_AB_vals,
+     "min_nu_over_d_A_nu_over_d_B_vals" : min_nu_over_d_A_nu_over_d_B_vals,
+     "max_nu_over_d_A_nu_over_d_B_vals" : max_nu_over_d_A_nu_over_d_B_vals,
+     "nu_over_d_A_times_nu_over_d_B_vals" : nu_over_d_A_times_nu_over_d_B_vals,
+     "nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals" : nu_over_d_A_times_nu_over_d_B_vals_over_nu_over_d_AB_vals,
+     "min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals" : min_nu_over_d_A_nu_over_d_B_vals_over_nu_over_d_AB_vals    
+    }
+    
+    return results_dict
     
 
 def attention_experiment_nu_over_d(N : int,
@@ -4597,7 +4597,7 @@ def attention_experiment_nu_over_d(N : int,
     print("alpha_K = ", alpha_K, ", pp_dim_WK = ", pp_dim_WK, ", nu_over_d_WK = ", nu_over_d_WK, ", implied_alpha_K = ", implied_alpha_K)
     print("alpha_Q = ", alpha_Q, ", pp_dim_WQ = ", pp_dim_WQ, ", nu_over_d_WQ = ", nu_over_d_WQ, ", implied_alpha_Q = ", implied_alpha_Q)
     print("alpha_V = ", alpha_V, ", pp_dim_WV = ", pp_dim_WV, ", nu_over_d_WV = ", nu_over_d_WV, ", implied_alpha_V = ", implied_alpha_V)
-	
+    
   XWK = np.zeros((X.shape[0], WK.shape[1]))
   if use_gpu:
     print("XWK : using GPU")
@@ -4786,7 +4786,7 @@ def attention_experiment_nu_over_d(N : int,
     "estimate_alpha_AttnQKV" : estimate_alpha_AttnQKV,
     "actual_nu_over_d_AttnQKV" : actual_nu_over_d_AttnQKV,
     "estimate_nu_over_d_AttnQKV" : estimate_nu_over_d_AttnQKV,
-	"pure_estimate_nu_over_d_AttnQKV" : pure_estimate_nu_over_d_AttnQKV,
+    "pure_estimate_nu_over_d_AttnQKV" : pure_estimate_nu_over_d_AttnQKV,
     "new_estimate_nu_over_d_AttnQKV" : new_estimate_nu_over_d_AttnQKV
   }
 
@@ -4882,7 +4882,7 @@ def calculate_pp_dim_X_pp_dim_XTX(N : int,
     "nu_S_over_d" : nu_S_over_d,
     "nu_S_squared_over_d" : nu_S_squared_over_d,
     "pp_dim_X" : pp_dim_X,
-    "nu_over_d_X" : nu_over_d_X,	
+    "nu_over_d_X" : nu_over_d_X,    
     "pp_dim_XTX" : pp_dim_XTX,
     "nu_over_d_XTX" : nu_over_d_XTX,
     "estimate_nu_over_d_XTX" : estimate_nu_over_d_XTX,
@@ -4944,12 +4944,12 @@ def normalisation_experiment_nu_over_d(N : int,
   actual_alpha_Xnormalised = calculate_alpha_given_nu_over_d_and_d(nu_over_d_Xnormalised, dim_Xnormalised)
   
   results_dict = {
-	"nu_over_d" : nu_over_d,
+    "nu_over_d" : nu_over_d,
     "N" : N,
-	"d" : d,
+    "d" : d,
     "pp_dim_X" : pp_dim_X,
     "nu_over_d_X" : nu_over_d_X,
-	"initial_alpha_X" : initial_alpha_X,
+    "initial_alpha_X" : initial_alpha_X,
     "actual_alpha_X" : actual_alpha_X,
     "pp_dim_Xnormalised" : pp_dim_Xnormalised, 
     "nu_over_d_Xnormalised" : nu_over_d_Xnormalised,
@@ -4988,13 +4988,13 @@ def transpose_experiment_nu_over_d(N : int,
   actual_alpha_XT = calculate_alpha_given_nu_over_d_and_d(nu_over_d_XT, dim_XT)
   
   results_dict = {
-	"nu_over_d" : nu_over_d,
+    "nu_over_d" : nu_over_d,
     "N" : N,
-	"d" : d,
+    "d" : d,
     "dim_X" : dim_X,
     "pp_dim_X" : pp_dim_X,
     "nu_over_d_X" : nu_over_d_X,
-	"initial_alpha_X" : initial_alpha_X,
+    "initial_alpha_X" : initial_alpha_X,
     "actual_alpha_X" : actual_alpha_X,
     "dim_XT" : dim_XT,
     "pp_dim_XT" : pp_dim_XT, 
@@ -5506,4 +5506,310 @@ def plot_three(results_dict : dict, prefix : str):
     plt.legend()
     plt.title(this_title)
     plt.show()
+    
+
+def pp_dim_XW_experiment(this_config : dict) -> dict:
+
+    num_iterations = this_config["num_iterations"]
+    use_uniform = this_config["use_uniform"]
+    use_pareto = this_config["use_pareto"]
+    pareto_X_alpha_vals = this_config["pareto_X_alpha_vals"]
+    pareto_W_alpha_vals = this_config["pareto_W_alpha_vals"]
+    pareto_uniform_draws = this_config["pareto_uniform_draws"]
+    use_normal = this_config["use_normal"]
+    size_scale = this_config["size_scale"]
+    enforce_square_matrices = this_config["enforce_square_matrices"]
+    calculate_using_orthogonals = this_config["calculate_using_orthogonals"]
+    column_demean = this_config["column_demean"]
+    random_mode = this_config["random_mode"]
+    fix_N_d_m = this_config["fix_N_d_m"]
+
+    if use_pareto:
+        num_iterations = min(num_iterations, min(len(pareto_X_alpha_vals), len(pareto_W_alpha_vals)))
+
+    pp_dim_X_over_dim_X_vals = np.zeros(num_iterations)
+    pp_dim_W_over_dim_W_vals = np.zeros(num_iterations)
+    pp_dim_XW_vals = np.zeros(num_iterations)
+    pp_dim_XW_over_dim_XW_vals = np.zeros(num_iterations)
+    conjectured_lower_bound_vals = np.zeros(num_iterations)
+    conjectured_upper_bound_vals = np.zeros(num_iterations) 
+    actual_over_lower_vals = np.zeros(num_iterations) 
+    upper_over_actual_vals = np.zeros(num_iterations)
+    tr_XW_squared_over_tr_WtXtXW_vals = np.zeros(num_iterations)
+
+    for i in range(num_iterations):
+        m = int(size_scale * (1.0 + np.random.uniform(0,1)))
+        d = m + int(size_scale * np.random.uniform(0,1))
+        N = d + int(size_scale * np.random.uniform(0,1))
+        if enforce_square_matrices:
+            N = d
+            m = d
+        if fix_N_d_m:
+            N = size_scale
+            d = size_scale
+            m = size_scale
+        print(i, "N = ", N, ", d = ", d, ", m = ", m)
+
+        X = np.zeros((N,d))
+        W = np.zeros((d,m))
+        
+        if random_mode:
+            print("using random_mode")
+            use_uniform = False
+            use_normal = False
+            use_pareto = False
+            use_cauchy = False
+            this_mode = np.random.randint(0,3)
+            if this_mode == 0:
+                use_uniform = True
+            if this_mode == 1:
+                use_normal = True
+            if this_mode == 2:
+                use_pareto = True
+                
+        if use_uniform:
+            print("using uniform")
+            if calculate_using_orthogonals:
+                # calculate X:
+                U_X = generate_orthogonal_matrix(X.shape[0])
+                V_X = generate_orthogonal_matrix(X.shape[1])
+                diag_X = np.zeros((X.shape[0], X.shape[1]))
+                X_singular_values = np.random.uniform(0,1,min(X.shape[0],X.shape[1]))
+                for j in range(len(X_singular_values)):
+                    diag_X[j,j] = X_singular_values[j]
+                X = U_X @ diag_X @ V_X
+            
+                # calculate W:
+                U_W = generate_orthogonal_matrix(W.shape[0])
+                V_W = generate_orthogonal_matrix(W.shape[1])
+                diag_W = np.zeros((W.shape[0], W.shape[1]))
+                W_singular_values = np.random.uniform(0,1,min(W.shape[0],W.shape[1]))
+                for j in range(len(W_singular_values)):
+                    diag_W[j,j] = W_singular_values[j]
+                W = U_W @ diag_W @ V_W
+
+            else:
+                X = np.random.uniform(0,1,(N,d))
+                W = np.random.uniform(0,1,(d,m))
+
+        if use_pareto:
+            print("using Pareto")
+            X_alpha = pareto_X_alpha_vals[i]
+            W_alpha = pareto_W_alpha_vals[i]
+            if calculate_using_orthogonals:
+                # do something
+                print("not yet implemented")
+            else:
+                X = (generate_pareto_draws(X.shape[0] * X.shape[1],X_alpha, pareto_uniform_draws)).reshape(X.shape[0],X.shape[1])
+                W = (generate_pareto_draws(W.shape[0] * W.shape[1],W_alpha, pareto_uniform_draws)).reshape(W.shape[0],W.shape[1])
+
+        if use_normal:
+            print("using normal")
+            X = np.random.normal(0,1,(X.shape[0],X.shape[1]))
+            W = np.random.normal(0,1,(W.shape[0],W.shape[1]))
+
+        #if use_cauchy:
+        #    print("using Cauchy")
+        #    X = (np.random.standard_cauchy(X.shape[0] * X.shape[1])).reshape(X.shape[0],X.shape[1])
+        #    W = (np.random.standard_cauchy(W.shape[0] * W.shape[1])).reshape(W.shape[0],W.shape[1])
+
+        if column_demean:
+            mu_X = X.sum(axis=0) / X.shape[0]
+            X = X - mu_X
+            mu_W = W.sum(axis=0) / W.shape[0]
+            W = W - mu_W
+        
+        pp_dim_X = calculate_PatnaikPearson_dim(X)
+        dim_X = X.shape[1]
+        pp_dim_X_over_dim_X = pp_dim_X / dim_X
+        pp_dim_X_over_dim_X_vals[i] = pp_dim_X_over_dim_X
+        print(i, "X.shape = ", X.shape, ", dim_X = ", dim_X)
+
+        pp_dim_W = calculate_PatnaikPearson_dim(W)
+        dim_W = W.shape[1]
+        pp_dim_W_over_dim_W = pp_dim_W / dim_W
+        pp_dim_W_over_dim_W_vals[i] = pp_dim_W_over_dim_W
+        print(i, "W.shape = ", W.shape, ", dim_W = ", dim_W)
+
+        XW = X @ W
+        pp_dim_XW = calculate_PatnaikPearson_dim(XW)
+        pp_dim_XW_vals[i] = pp_dim_XW
+        dim_XW = XW.shape[1]
+        pp_dim_XW_over_dim_XW = pp_dim_XW / dim_XW
+        pp_dim_XW_over_dim_XW_vals[i] = pp_dim_XW_over_dim_XW
+        print(i, "XW.shape = ", XW.shape, ", dim_XW = ", dim_XW)
+
+        conjectured_lower_bound = pp_dim_X_over_dim_X * pp_dim_W_over_dim_W
+        conjectured_lower_bound_vals[i] = conjectured_lower_bound
+        conjectured_upper_bound = min(pp_dim_X_over_dim_X, pp_dim_W_over_dim_W)
+        conjectured_upper_bound_vals[i] = conjectured_upper_bound
+        actual_over_lower = pp_dim_XW_over_dim_XW / conjectured_lower_bound
+        actual_over_lower_vals[i] = actual_over_lower
+        upper_over_actual = conjectured_upper_bound / pp_dim_XW_over_dim_XW
+        upper_over_actual_vals[i] = upper_over_actual
+
+        print(i, actual_over_lower, upper_over_actual)
+
+        tr_XW = np.trace(XW)
+        WtXtXW = (XW).T @ XW
+        tr_WtXtXW = np.trace(WtXtXW)
+        tr_XW_squared_over_tr_WtXtXW = (tr_XW**2) / tr_WtXtXW
+        tr_XW_squared_over_tr_WtXtXW_vals[i] = tr_XW_squared_over_tr_WtXtXW
+        print(i, "PP(XW) = ", pp_dim_XW, ", Tr(XW)^2 / Tr( (XW)^t (XW)) = ", tr_XW_squared_over_tr_WtXtXW) 
+    
+    results_dict = {
+        "pp_dim_X_over_dim_X_vals" : pp_dim_X_over_dim_X_vals,
+        "pp_dim_W_over_dim_W_vals" : pp_dim_W_over_dim_W_vals,
+        "pp_dim_XW_vals" : pp_dim_XW_vals,
+        "pp_dim_XW_over_dim_XW_vals" : pp_dim_XW_over_dim_XW_vals,
+        "conjectured_lower_bound_vals" : conjectured_lower_bound_vals,
+        "conjectured_upper_bound_vals" :  conjectured_upper_bound_vals,
+        "actual_over_lower_vals" :  actual_over_lower_vals,
+        "upper_over_actual_vals" : upper_over_actual_vals,
+        "tr_XW_squared_over_tr_WtXtXW_vals" : tr_XW_squared_over_tr_WtXtXW_vals,
+        "pareto_X_alpha_vals" : pareto_X_alpha_vals,
+        "pareto_W_alpha_vals" : pareto_W_alpha_vals
+    }
+    
+    return results_dict
+    
+def pp_dim_XW_experiment_get_default_config() -> dict:
+    
+    # generate the default config for pp_dim_XW_experiment
+
+    default_config = {}
+
+    default_config["num_iterations"] = 0
+    default_config["use_uniform"] = False
+    default_config["use_normal"] = False
+    default_config["use_pareto"] = False
+    default_config["pareto_X_alpha_vals"] = np.zeros(1)
+    default_config["pareto_W_alpha_vals"] = np.zeros(1)
+    default_config["pareto_uniform_draws"] = False
+    default_config["size_scale"] = 0
+    default_config["enforce_square_matrices"] = False
+    default_config["calculate_using_orthogonals"] = False
+    default_config["column_demean"] = True
+    default_config["random_mode"] = False
+    default_config["fix_N_d_m"] = False
+
+    return default_config
+    
+def pp_dim_XW_experiment_plot_one(results_dict : dict, prefix : str):
+
+    pp_dim_X_over_dim_X_vals = results_dict["pp_dim_X_over_dim_X_vals"] 
+    pp_dim_W_over_dim_W_vals = results_dict["pp_dim_W_over_dim_W_vals"] 
+    pp_dim_XW_over_dim_XW_vals = results_dict["pp_dim_XW_over_dim_XW_vals"] 
+    conjectured_lower_bound_vals = results_dict["conjectured_lower_bound_vals"] 
+    conjectured_upper_bound_vals = results_dict["conjectured_upper_bound_vals"] 
+    actual_over_lower_vals = results_dict["actual_over_lower_vals"] 
+    upper_over_actual_vals = results_dict["upper_over_actual_vals"]
+    tr_XW_squared_over_tr_WtXtXW_vals = results_dict["tr_XW_squared_over_tr_WtXtXW_vals"] 
+
+    this_title = prefix
+    this_title += "Conjectured upper and lower bounds on (1/m)PP(XW)"
+    this_title += "\n Upper bound : min((1/d)PP(X),(1/m)PP(W))"
+    this_title += "\n Lower bound : (1/d)PP(X) * (1/m)PP(W)"
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_XW_over_dim_XW_vals, label = "(1/m)PP(XW)")
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, conjectured_upper_bound_vals, 
+        label = "min((1/d)PP(X),(1/m)PP(W))")
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, conjectured_lower_bound_vals, 
+        label = "(1/d)PP(X) * (1/m)PP(W)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix
+    this_title += "Conjectured upper bound on (1/m)PP(XW)"
+    this_title += "\n Upper bound : min((1/d)PP(X),(1/m)PP(W))"
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_XW_over_dim_XW_vals, label = "(1/m)PP(XW)")
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_X_over_dim_X_vals, label = "(1/d)PP(X)")
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_W_over_dim_W_vals, label = "(1/m)PP(W)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    actual_over_lower_text = "(1/m) PP(XW) / ((1/d) PP(X) * (1/m) PP(W))"
+    sep = "="*80
+    print("\n", sep, "\n", actual_over_lower_text, "\n", sep)
+    pp.display_stats(actual_over_lower_vals)
+
+    rescale_factor=1.0
+    x_label = actual_over_lower_text
+    y_label = "frequency"
+    title = "Actual Value / Lower Bound:\n " + actual_over_lower_text
+    pp.plot_histogram(actual_over_lower_vals, rescale_factor, x_label, y_label, title)
+    #pp.display_stats
+
+    upper_over_actual_text = "min{(1/d)PP(X),(1/m)PP(W)} / (1/m) PP(XW)"
+    sep = "="*80
+    print("\n", sep, "\n", upper_over_actual_text, "\n", sep)
+    pp.display_stats(upper_over_actual_vals)
+
+    rescale_factor=1.0
+    x_label = upper_over_actual_text
+    y_label = "frequency"
+    title = "Upper Bound / Actual Value :\n " + upper_over_actual_text
+    pp.plot_histogram(upper_over_actual_vals, rescale_factor, x_label, y_label, title)
+    
+def pp_dim_XW_experiment_pareto_plot(this_results_dict : dict, prefix : str):
+
+    pp_dim_X_over_dim_X_vals = this_results_dict["pp_dim_X_over_dim_X_vals"] 
+    pp_dim_W_over_dim_W_vals = this_results_dict["pp_dim_W_over_dim_W_vals"] 
+    pp_dim_XW_over_dim_XW_vals = this_results_dict["pp_dim_XW_over_dim_XW_vals"] 
+    conjectured_lower_bound_vals = this_results_dict["conjectured_lower_bound_vals"] 
+    conjectured_upper_bound_vals = this_results_dict["conjectured_upper_bound_vals"] 
+    actual_over_lower_vals = this_results_dict["actual_over_lower_vals"] 
+    upper_over_actual_vals = this_results_dict["upper_over_actual_vals"]
+    tr_XW_squared_over_tr_WtXtXW_vals = this_results_dict["tr_XW_squared_over_tr_WtXtXW_vals"] 
+    pareto_X_alpha_vals = this_results_dict["pareto_X_alpha_vals"]
+    pareto_W_alpha_vals = this_results_dict["pareto_W_alpha_vals"]
+
+    plt_vs_X_alpha = this_results_dict["plt_vs_X_alpha"]
+    plt_vs_W_alpha = this_results_dict["plt_vs_W_alpha"]
+
+    if plt_vs_X_alpha:
+        this_title = prefix
+        this_title += "W_alpha vs X_alpha"
+        plt.scatter(pareto_X_alpha_vals, pareto_X_alpha_vals, label = "X_alpha")
+        plt.scatter(pareto_X_alpha_vals, pareto_W_alpha_vals, label = "W_alpha")
+        plt.xlabel("X_alpha")
+        plt.legend()
+        plt.title(this_title)
+        plt.show()
+
+        this_title = prefix
+        this_title += "(1/d)PP(X) * (1/m)PP(W), (1/m)PP(XW) and min((1/d)PP(X),(1/m)PP(W)) vs X_alpha"
+        plt.scatter(pareto_X_alpha_vals, pp_dim_XW_over_dim_XW_vals, label = "(1/m)PP(XW)")
+        plt.scatter(pareto_X_alpha_vals, conjectured_upper_bound_vals, 
+            label = "min((1/d)PP(X),(1/m)PP(W))")
+        plt.scatter(pareto_X_alpha_vals, conjectured_lower_bound_vals, 
+            label = "(1/d)PP(X) * (1/m)PP(W)")
+        plt.xlabel("X_alpha")
+        plt.legend()
+        plt.title(this_title)
+        plt.show()
+        
+    
+    if plt_vs_W_alpha:
+        this_title = prefix
+        this_title += "X_alpha vs W_alpha"
+        plt.scatter(pareto_W_alpha_vals, pareto_W_alpha_vals, label = "W_alpha")
+        plt.scatter(pareto_W_alpha_vals, pareto_X_alpha_vals, label = "X_alpha")
+        plt.xlabel("W_alpha")
+        plt.legend()
+        plt.title(this_title)
+        plt.show()
+
+        this_title = prefix
+        this_title += "(1/d)PP(X) * (1/m)PP(W), (1/m)PP(XW) and min((1/d)PP(X),(1/m)PP(W)) vs W_alpha"
+        plt.scatter(pareto_W_alpha_vals, pp_dim_XW_over_dim_XW_vals, label = "(1/m)PP(XW)")
+        plt.scatter(pareto_W_alpha_vals, conjectured_upper_bound_vals, 
+            label = "min((1/d)PP(X),(1/m)PP(W))")
+        plt.scatter(pareto_W_alpha_vals, conjectured_lower_bound_vals, 
+            label = "(1/d)PP(X) * (1/m)PP(W)")
+        plt.xlabel("W_alpha")
+        plt.legend()
+        plt.title(this_title)
+        plt.show()
   
