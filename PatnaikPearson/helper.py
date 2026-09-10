@@ -5732,25 +5732,25 @@ def pp_dim_XW_experiment_plot_one(results_dict : dict, prefix : str):
     actual_over_lower_text = "(1/m) PP(XW) / ((1/d) PP(X) * (1/m) PP(W))"
     sep = "="*80
     print("\n", sep, "\n", actual_over_lower_text, "\n", sep)
-    pp.display_stats(actual_over_lower_vals)
+    display_stats(actual_over_lower_vals)
 
     rescale_factor=1.0
     x_label = actual_over_lower_text
     y_label = "frequency"
     title = "Actual Value / Lower Bound:\n " + actual_over_lower_text
-    pp.plot_histogram(actual_over_lower_vals, rescale_factor, x_label, y_label, title)
-    #pp.display_stats
+    plot_histogram(actual_over_lower_vals, rescale_factor, x_label, y_label, title)
+    #display_stats
 
     upper_over_actual_text = "min{(1/d)PP(X),(1/m)PP(W)} / (1/m) PP(XW)"
     sep = "="*80
     print("\n", sep, "\n", upper_over_actual_text, "\n", sep)
-    pp.display_stats(upper_over_actual_vals)
+    display_stats(upper_over_actual_vals)
 
     rescale_factor=1.0
     x_label = upper_over_actual_text
     y_label = "frequency"
     title = "Upper Bound / Actual Value :\n " + upper_over_actual_text
-    pp.plot_histogram(upper_over_actual_vals, rescale_factor, x_label, y_label, title)
+    plot_histogram(upper_over_actual_vals, rescale_factor, x_label, y_label, title)
     
 def pp_dim_XW_experiment_pareto_plot(this_results_dict : dict, prefix : str):
 
@@ -5812,4 +5812,264 @@ def pp_dim_XW_experiment_pareto_plot(this_results_dict : dict, prefix : str):
         plt.legend()
         plt.title(this_title)
         plt.show()
-  
+        
+def trace_Y_trace_S_experiment(this_config : dict) -> dict:
+
+    num_iterations = this_config["num_iterations"]
+    size_scale = this_config["size_scale"]
+    use_uniform = this_config["use_uniform"]
+    use_normal = this_config["use_normal"]
+    use_pareto = this_config["use_pareto"]
+    pareto_alpha_vals = this_config["pareto_alpha_vals"]
+    pareto_uniform_draws = this_config["pareto_uniform_draws"]
+    column_demean = this_config["column_demean"]
+    force_square_matrices = this_config["force_square_matrices"]
+
+    trace_S_vals = np.zeros(num_iterations)
+    trace_Ssquared_vals = np.zeros(num_iterations) 
+    nu_psi_vals = np.zeros(num_iterations)
+    trace_Y_vals = np.zeros(num_iterations)
+    trace_YtY_vals = np.zeros(num_iterations)
+    fY_vals = np.zeros(num_iterations)
+    fS_vals = np.zeros(num_iterations)
+    fY_over_fS_vals = np.zeros(num_iterations)
+    fS_over_nu_psi_vals = np.zeros(num_iterations)
+    trace_Y_over_trace_S_vals = np.zeros(num_iterations)
+    trace_YtY_over_trace_Ssquared_vals = np.zeros(num_iterations)
+    trace_Y_all_squared_over_trace_YtY_vals = np.zeros(num_iterations)
+    trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals = np.zeros(num_iterations)
+
+    for i in range(num_iterations):
+        d = int(size_scale * (1.0 + np.random.uniform(0,1)))
+        N = d + int(size_scale * np.random.uniform(0,1))
+        if force_square_matrices:
+            N = d
+        Y = np.zeros((N,d))
+
+        if use_uniform:
+            Y = np.random.uniform(0,1,(Y.shape[0],Y.shape[1])) - 0.5
+            
+        if use_normal:
+            Y = np.random.normal(0,1,(Y.shape[0],Y.shape[1]))
+            
+        if use_pareto:
+            Y_alpha = pareto_alpha_vals[i]
+            Y = (generate_pareto_draws(Y.shape[0] * Y.shape[1],Y_alpha, pareto_uniform_draws)).reshape(Y.shape[0],Y.shape[1])
+
+        if column_demean:
+            mu_Y = Y.sum(axis=0) / Y.shape[0]
+            print("Y.shape = ", Y.shape, ", mu_Y.shape = ", mu_Y.shape)
+            Y = Y - mu_Y
+
+        # do SVD
+        U, S, Vh = np.linalg.svd(Y, full_matrices=True)
+
+        trace_S = sum(S) 
+        trace_Ssquared = sum(S*S) 
+        nu_psi = calculate_nu(S)
+        trace_Y = np.trace(Y)
+        trace_YtY = np.trace(Y.T @ Y)
+        fY = (trace_Y ** 2) / trace_YtY
+        fS = (trace_S ** 2) / trace_Ssquared
+        fY_over_fS = fY / fS
+        fS_over_nu_psi = fS / nu_psi
+        trace_Y_over_trace_S = trace_Y / trace_S
+        trace_YtY_over_trace_Ssquared = trace_YtY / trace_Ssquared
+        trace_Y_all_squared_over_trace_YtY = (trace_Y **2) / trace_YtY
+        trace_Y_all_squared_over_trace_YtY_over_nu_psi = trace_Y_all_squared_over_trace_YtY / nu_psi
+        
+    
+        print(i, "N = ", N, ", d = ", d)
+        print("trace_Y = ", trace_Y, ", trace_S = ", trace_S, ", trace_Y / trace_S = ", trace_Y / trace_S)
+        print("trace_YtY = ", trace_YtY, ", trace_Ssquared = ", trace_Ssquared, ", trace_YtY / trace_Ssquared = ", trace_YtY / trace_Ssquared)
+        print("(trace_Y ** 2) / (trace_YtY * nu_psi) = ", (trace_Y ** 2) / (trace_YtY * nu_psi))
+        print("(trace_S ** 2) / (trace_Squared * nu_psi) = ", (trace_S ** 2) / (trace_Ssquared * nu_psi))
+        print(i, fY_over_fS, fS_over_nu_psi)
+
+        trace_S_vals[i] = trace_S
+        trace_Ssquared_vals[i] = trace_Ssquared 
+        nu_psi_vals[i] = nu_psi
+        trace_Y_vals[i] = trace_Y
+        trace_YtY_vals[i] = trace_YtY
+        fY_vals[i] = fY
+        fS_vals[i] = fS
+        fY_over_fS_vals[i] = fY_over_fS
+        fS_over_nu_psi_vals[i] = fS_over_nu_psi
+        trace_Y_over_trace_S_vals[i] = trace_Y_over_trace_S
+        trace_YtY_over_trace_Ssquared_vals[i] = trace_YtY_over_trace_Ssquared
+        trace_Y_all_squared_over_trace_YtY_vals[i] = trace_Y_all_squared_over_trace_YtY
+        trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals[i] = trace_Y_all_squared_over_trace_YtY_over_nu_psi
+	
+    results_dict = {
+        "trace_S_vals" : trace_S_vals,
+        "trace_Ssquared_vals" :  trace_Ssquared_vals,
+        "nu_psi_vals" : nu_psi_vals,
+        "trace_Y_vals" : trace_Y_vals,
+        "trace_YtY_vals" : trace_YtY_vals,
+        "fY_vals" : fY_vals,
+        "fS_vals" : fS_vals,
+        "fY_over_fS_vals" : fY_over_fS_vals,
+        "fS_over_nu_psi_vals" : fS_over_nu_psi_vals,
+        "trace_Y_over_trace_S_vals" : trace_Y_over_trace_S_vals,
+        "trace_YtY_over_trace_Ssquared_vals" : trace_YtY_over_trace_Ssquared_vals,
+        "trace_Y_all_squared_over_trace_YtY_vals" : trace_Y_all_squared_over_trace_YtY_vals,
+        "trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals" : trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals,
+        "pareto_alpha_vals" : pareto_alpha_vals,
+        "use_pareto" : use_pareto
+    }
+
+    return results_dict
+    
+def trace_Y_trace_S_experiment_get_default_config() -> dict:
+    
+    # generate the default config for trace_Y_trace_S_experiment
+
+    default_config = {}
+
+    default_config["num_iterations"] = 0
+    default_config["size_scale"] = 0
+    default_config["use_uniform"] = False
+    default_config["use_normal"] = False
+    default_config["use_pareto"] = False
+    default_config["pareto_alpha_vals"] = np.zeros(1)
+    default_config["pareto_uniform_draws"] = False
+    default_config["column_demean"] = False
+    default_config["force_square_matrices"] = False 
+
+    return default_config
+
+def trace_Y_trace_S_experiment_plot_one(results_dict : dict, prefix : str):
+
+    trace_S_vals = results_dict["trace_S_vals"]
+    trace_Ssquared_vals = results_dict["trace_Ssquared_vals"]
+    nu_psi_vals = results_dict["nu_psi_vals"]
+    trace_Y_vals = results_dict["trace_Y_vals"]
+    trace_YtY_vals = results_dict["trace_YtY_vals"]
+    fY_vals = results_dict["fY_vals"]
+    fS_vals = results_dict["fS_vals"]
+    fY_over_fS_vals = results_dict["fY_over_fS_vals"]
+    fS_over_nu_psi_vals = results_dict["fS_over_nu_psi_vals"]
+    trace_Y_over_trace_S_vals = results_dict["trace_Y_over_trace_S_vals"]
+    trace_YtY_over_trace_Ssquared_vals = results_dict["trace_YtY_over_trace_Ssquared_vals"]
+    trace_Y_all_squared_over_trace_YtY_vals = results_dict["trace_Y_all_squared_over_trace_YtY_vals"]
+    trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals = results_dict["trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals"]
+    use_pareto = results_dict["use_pareto"]
+    pareto_alpha_vals = results_dict["pareto_alpha_vals"]
+    
+    this_title = prefix + "Trace(Y) vs Trace(S)"
+    plt.scatter(trace_S_vals, trace_S_vals, label = "Trace(S)")
+    plt.scatter(trace_S_vals, trace_Y_vals, label = "Trace(Y)")
+    plt.xlabel("Trace(S)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    this_title = prefix + "Trace(Y^t Y) vs Trace(S^2)"
+    plt.scatter(trace_Ssquared_vals, trace_Ssquared_vals, label = "Trace(S^2)")
+    plt.scatter(trace_Ssquared_vals, trace_YtY_vals, label = "Trace(Y^t Y)")
+    plt.xlabel("Trace(S^2)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+    
+
+    sep = "="*100
+    sep = "\n" + sep + "\n"
+    rescale_factor=1.0
+
+
+    fY_text = "fY = Trace(Y)^2 / Trace(YtY)"
+    print(sep, fY_text, sep)
+    display_stats(fY_vals)
+    x_label = fY_text
+    y_label = "frequency"
+    title = prefix + fY_text
+    plot_histogram(fY_vals, rescale_factor, x_label, y_label, title)
+
+    fS_text = "fS = Trace(S)^2 / Trace(S^2)"
+    print(sep, fS_text, sep)
+    display_stats(fS_vals)    
+    x_label = fS_text
+    y_label = "frequency"
+    title = prefix + fS_text
+    plot_histogram(fS_vals, rescale_factor, x_label, y_label, title)
+    
+    this_title = prefix
+    this_title += "nu(psi) vs fS = Trace(S)^2 / Trace(S^2)"
+    plt.scatter(fS_vals, fS_vals, label = "fS = Trace(S)^2 / Trace(S^2)")
+    plt.scatter(fS_vals, nu_psi_vals, label = "nu(psi)")
+    plt.xlabel("fS = Trace(S)^2 / Trace(S^2)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
+
+    fY_over_fS_text = "fY / fS = (Trace(Y)^2 / Trace(YtY)) / Trace(S)^2 / Trace(S^2))"
+    print(sep, fY_over_fS_text, sep)
+    display_stats(fY_over_fS_vals) 
+    x_label = fY_over_fS_text
+    y_label = "frequency"
+    title = prefix + fY_over_fS_text    
+    plot_histogram(fY_over_fS_vals, rescale_factor, x_label, y_label, title)
+
+    fS_over_nu_psi_text = "fS / nu(psi) = (Trace(S)^2 / Trace(S^2)) / nu(psi)"
+    print(sep, fS_over_nu_psi_text, sep)
+    display_stats(fS_over_nu_psi_vals)   
+    x_label = fS_over_nu_psi_text
+    y_label = "frequency"
+    title = prefix + fS_over_nu_psi_text    
+    plot_histogram(fS_over_nu_psi_vals, rescale_factor, x_label, y_label, title)
+
+    trace_Y_over_trace_S_text = "Trace(Y) / Trace(S)"
+    print(sep, trace_Y_over_trace_S_text, sep)
+    display_stats(trace_Y_over_trace_S_vals)   
+    x_label = trace_Y_over_trace_S_text
+    y_label = "frequency"
+    title = prefix + trace_Y_over_trace_S_text    
+    plot_histogram(trace_Y_over_trace_S_vals, rescale_factor, x_label, y_label, title)
+
+    trace_YtY_over_trace_Ssquared_text = "Trace(YtY) / Trace(S^2)"
+    print(sep, trace_YtY_over_trace_Ssquared_text, sep)
+    display_stats(trace_YtY_over_trace_Ssquared_vals)
+    x_label = trace_YtY_over_trace_Ssquared_text
+    y_label = "frequency"
+    title = prefix + trace_YtY_over_trace_Ssquared_text
+    plot_histogram(trace_YtY_over_trace_Ssquared_vals, rescale_factor, x_label, y_label, title)
+    
+    if use_pareto:
+        this_title = prefix + trace_Y_over_trace_S_text + " vs alpha"
+        plt.scatter(pareto_alpha_vals, trace_Y_over_trace_S_vals, label = trace_Y_over_trace_S_text)
+        plt.xlabel("alpha")
+        plt.legend()
+        plt.title(this_title)
+
+        this_title = prefix + trace_YtY_over_trace_Ssquared_text + " vs alpha"
+        plt.scatter(pareto_alpha_vals, trace_YtY_over_trace_Ssquared_vals, label = trace_YtY_over_trace_Ssquared_text)
+        plt.xlabel("alpha")
+        plt.legend()
+        plt.title(this_title)
+        
+        this_title = prefix +  fY_over_fS_text + " vs alpha"
+        plt.scatter(pareto_alpha_vals, fY_over_fS_vals, label = fY_over_fS_text)
+        plt.xlabel("alpha")
+        plt.legend()
+        plt.title(this_title)
+        
+        trace_Y_all_squared_over_trace_YtY_text = "Trace(Y)^2 / Trace(Y^t Y)"
+        this_title = prefix + trace_Y_all_squared_over_trace_YtY_text + " vs alpha"       
+        plt.scatter(pareto_alpha_vals, trace_Y_all_squared_over_trace_YtY_vals, label = trace_Y_all_squared_over_trace_YtY_text)
+        plt.xlabel("alpha")
+        plt.legend()
+        plt.title(this_title)
+        
+        trace_Y_all_squared_over_trace_YtY_over_nu_psi_text = "(Trace(Y)^2 / Trace(Y^t Y)) / nu(psi)"
+        this_title = prefix + trace_Y_all_squared_over_trace_YtY_over_nu_psi_text + " vs alpha"       
+        plt.scatter(pareto_alpha_vals, trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals, label = trace_Y_all_squared_over_trace_YtY_over_nu_psi_text)
+        plt.xlabel("alpha")
+        plt.legend()
+        plt.title(this_title)
+        
+        
+
+
+        
+    

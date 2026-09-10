@@ -119,3 +119,6 @@ from .helper import pp_dim_XW_experiment
 from .helper import pp_dim_XW_experiment_get_default_config
 from .helper import pp_dim_XW_experiment_plot_one
 from .helper import pp_dim_XW_experiment_pareto_plot
+from .helper import trace_Y_trace_S_experiment
+from .helper import trace_Y_trace_S_experiment_get_default_config
+from .helper import trace_Y_trace_S_experiment_plot_one
