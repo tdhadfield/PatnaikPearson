@@ -6041,18 +6041,21 @@ def trace_Y_trace_S_experiment_plot_one(results_dict : dict, prefix : str):
         plt.xlabel("alpha")
         plt.legend()
         plt.title(this_title)
+        plt.show()
 
         this_title = prefix + trace_YtY_over_trace_Ssquared_text + " vs alpha"
         plt.scatter(pareto_alpha_vals, trace_YtY_over_trace_Ssquared_vals, label = trace_YtY_over_trace_Ssquared_text)
         plt.xlabel("alpha")
         plt.legend()
         plt.title(this_title)
+        plt.show()
         
         this_title = prefix +  fY_over_fS_text + " vs alpha"
         plt.scatter(pareto_alpha_vals, fY_over_fS_vals, label = fY_over_fS_text)
         plt.xlabel("alpha")
         plt.legend()
         plt.title(this_title)
+        plt.show()
         
         trace_Y_all_squared_over_trace_YtY_text = "Trace(Y)^2 / Trace(Y^t Y)"
         this_title = prefix + trace_Y_all_squared_over_trace_YtY_text + " vs alpha"       
@@ -6060,6 +6063,7 @@ def trace_Y_trace_S_experiment_plot_one(results_dict : dict, prefix : str):
         plt.xlabel("alpha")
         plt.legend()
         plt.title(this_title)
+        plt.show()
         
         trace_Y_all_squared_over_trace_YtY_over_nu_psi_text = "(Trace(Y)^2 / Trace(Y^t Y)) / nu(psi)"
         this_title = prefix + trace_Y_all_squared_over_trace_YtY_over_nu_psi_text + " vs alpha"       
@@ -6067,6 +6071,7 @@ def trace_Y_trace_S_experiment_plot_one(results_dict : dict, prefix : str):
         plt.xlabel("alpha")
         plt.legend()
         plt.title(this_title)
+        plt.show()
         
         
 
