@@ -125,3 +125,6 @@ from .helper import trace_Y_trace_S_experiment_plot_one
 from .helper import experiment_pp_dim_XW_vs_pp_dim_AQBQt_get_default_config
 from .helper import experiment_pp_dim_XW_vs_pp_dim_AQBQt
 from .helper import experiment_pp_dim_XW_vs_pp_dim_AQBQt_plot
+from .helper import experiment_pp_dim_XW_pp_dim_X_pp_dim_W_get_default_config
+from .helper import experiment_pp_dim_XW_pp_dim_X_pp_dim_W
+from .helper import experiment_pp_dim_XW_pp_dim_X_pp_dim_W_plot
