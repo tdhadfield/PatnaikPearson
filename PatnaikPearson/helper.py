@@ -5899,7 +5899,7 @@ def trace_Y_trace_S_experiment(this_config : dict) -> dict:
         trace_YtY_over_trace_Ssquared_vals[i] = trace_YtY_over_trace_Ssquared
         trace_Y_all_squared_over_trace_YtY_vals[i] = trace_Y_all_squared_over_trace_YtY
         trace_Y_all_squared_over_trace_YtY_over_nu_psi_vals[i] = trace_Y_all_squared_over_trace_YtY_over_nu_psi
-	
+    
     results_dict = {
         "trace_S_vals" : trace_S_vals,
         "trace_Ssquared_vals" :  trace_Ssquared_vals,
@@ -6072,6 +6072,118 @@ def trace_Y_trace_S_experiment_plot_one(results_dict : dict, prefix : str):
         plt.legend()
         plt.title(this_title)
         plt.show()
+        
+def experiment_pp_dim_XW_vs_pp_dim_AQBQt_get_default_config() -> dict:
+
+    default_config = {
+    "col_demean_X" : False,
+    "col_demean_W" : False,
+    "num_iterations" : 100,
+    "size_scale" : 100,
+    "max_pareto" : 5.0,
+    "min_pareto" : 0.1
+    }
+
+    return default_config
+    
+def experiment_pp_dim_XW_vs_pp_dim_AQBQt(this_config : dict) -> dict:
+
+    col_demean_X = this_config["col_demean_X"]
+    col_demean_W = this_config["col_demean_W"]
+
+    num_iterations = this_config["num_iterations"]
+    size_scale = this_config["size_scale"]
+
+    d_vals = np.random.randint(0, size_scale, num_iterations) + (size_scale * np.ones(num_iterations))
+    N_vals = d_vals + np.random.randint(0, size_scale, num_iterations)
+
+    max_pareto = this_config["max_pareto"]
+    min_pareto = this_config["min_pareto"]
+    
+    alpha_vals = np.random.uniform(min_pareto, max_pareto, num_iterations)
+    beta_vals = np.random.uniform(min_pareto, max_pareto, num_iterations)
+    #print(alpha_vals)
+    #print(beta_vals)
+
+    pp_dim_XW_vals = np.zeros(num_iterations)
+    pp_dim_XW_over_dim_XW_vals = np.zeros(num_iterations)
+    pp_dim_AQBQt_vals = np.zeros(num_iterations)
+    pp_dim_AQBQt_over_dim_AQBQt_vals = np.zeros(num_iterations)
+
+    for i in range(num_iterations):
+    
+        d = int(d_vals[i])
+        N = int(N_vals[i])
+    
+        alpha = alpha_vals[i]
+        beta = beta_vals[i]
+    
+        X = (generate_pareto_draws(N * d,alpha)).reshape(N,d)
+        if col_demean_X:
+            mu_X = X.sum(axis=0) / X.shape[0]
+            X = X - mu_X
+        
+        W = (generate_pareto_draws(d * d,beta)).reshape(d,d)
+        if col_demean_W:
+            mu_W = W.sum(axis=0) / W.shape[0]
+            W = W - mu_W
+        
+        XW = X @ W
+        pp_dim_XW = calculate_PatnaikPearson_dim(XW)
+        pp_dim_XW_vals[i] = pp_dim_XW
+        dim_XW = XW.shape[1]
+        pp_dim_XW_over_dim_XW = pp_dim_XW / dim_XW
+        pp_dim_XW_over_dim_XW_vals[i] = pp_dim_XW_over_dim_XW
+        #print(i, "(nu/d) (XW) = ", pp_dim_XW_over_dim_XW)
+
+        UX, A, VXt = np.linalg.svd(X, full_matrices=True)
+        UW, B, VWt = np.linalg.svd(W, full_matrices=True)
+        Q = VXt @ UW
+        AQBQt = np.diag(A) @ Q @ np.diag(B) @ Q.T
+        pp_dim_AQBQt = calculate_PatnaikPearson_dim(AQBQt)
+        pp_dim_AQBQt_vals[i] = pp_dim_AQBQt
+        print(i, "PP(XW) = ", pp_dim_XW, ", PP(AQBQt) = ", pp_dim_AQBQt)
+        dim_AQBQt = AQBQt.shape[1]
+        pp_dim_AQBQt_over_dim_AQBQt = pp_dim_AQBQt / dim_AQBQt
+        pp_dim_AQBQt_over_dim_AQBQt_vals[i] = pp_dim_AQBQt_over_dim_AQBQt
+    
+    results_dict = {
+    "col_demean_X" : col_demean_X,
+    "col_demean_W" : col_demean_W,
+    "min_pareto" : min_pareto,
+    "max_pareto" : max_pareto,
+    "num_iterations" : num_iterations,
+    "size_scale" : size_scale,
+    "N_vals" : N_vals,
+    "d_vals" : d_vals,
+    "alpha_vals" : alpha_vals,
+    "beta_vals" : beta_vals,
+    "pp_dim_XW_vals" : pp_dim_XW_vals,
+    "pp_dim_XW_over_dim_XW_vals" : pp_dim_XW_over_dim_XW_vals,
+    "pp_dim_AQBQt_vals" : pp_dim_AQBQt_vals,
+    "pp_dim_AQBQt_over_dim_AQBQt_vals" : pp_dim_AQBQt_over_dim_AQBQt_vals
+    }
+
+    return results_dict
+    
+def experiment_pp_dim_XW_vs_pp_dim_AQBQt_plot(this_results_dict : dict):
+
+    this_title = "(1/d) PP(AQBQt) vs (1/d) PP(XW)"
+    this_title += "\n col_demean_X = " + str(this_results_dict["col_demean_X"]) 
+    this_title += ", col_demean_W = " + str(this_results_dict["col_demean_W"])
+    this_title += "\n num_iterations = " + str(this_results_dict["num_iterations"])
+    this_title += "\n size_scale = " + str(this_results_dict["size_scale"])
+
+    pp_dim_XW_over_dim_XW_vals = this_results_dict["pp_dim_XW_over_dim_XW_vals"]
+    pp_dim_AQBQt_over_dim_AQBQt_vals = this_results_dict["pp_dim_AQBQt_over_dim_AQBQt_vals"]
+
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_XW_over_dim_XW_vals, label = "(1/d) PP(XW)")
+    plt.scatter(pp_dim_XW_over_dim_XW_vals, pp_dim_AQBQt_over_dim_AQBQt_vals, label = "(1/d) PP(AQBQt)")
+    plt.xlabel("(1/d) PP(XW)")
+    plt.ylabel("(1/d) PP(-)")
+    plt.legend()
+    plt.title(this_title)
+    plt.show()
         
         
 
